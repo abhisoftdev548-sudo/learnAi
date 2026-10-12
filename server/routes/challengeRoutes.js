@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import * as controller from '../controllers/challengeController.js';
+import { authenticate, adminOnly } from '../middleware/auth.js';
+import { validate, challenge, challengeQuery, validId } from '../utils/validation.js';
+const router = Router();
+router.use(authenticate);
+router.get('/', validate(challengeQuery, 'query'), controller.list);
+router.get('/:id/progress', validId, controller.progress);
+router.get('/:id', validId, controller.detail);
+router.post('/', adminOnly, validate(challenge), controller.create);
+router.put('/:id', adminOnly, validId, validate(challenge), controller.update);
+router.delete('/:id', adminOnly, validId, controller.remove);
+export default router;
