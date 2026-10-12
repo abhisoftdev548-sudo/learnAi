@@ -1,0 +1,118 @@
+const html = (label, selector, group = 'structure', minCount = 1) => ({ label, type: 'html-selector', selector, group, minCount });
+const attr = (label, selector, attribute, expected) => ({ label, type: 'html-attribute', selector, attribute, expected, group: 'quality' });
+const css = (label, selector, property, expected, media) => ({ label, type: 'css-declaration', selector, property, expected, group: media ? 'responsive' : 'layout', ...(media && { media }) });
+const call = (label, callee) => ({ label, type: 'js-call', callee, group: 'functionality' });
+const node = (label, nodeType) => ({ label, type: 'js-node', nodeType, group: 'quality' });
+const definitions = [
+  {
+    title: 'Profile Card', category: 'HTML', difficulty: 'Easy',
+    description: 'Build a semantic profile card with a portrait, name, biography and contact link.',
+    instructions: ['Create an article.profile containing an h1 and a paragraph.', 'Include an image with a non-empty alt attribute.', 'Add a mailto contact link inside the article.'],
+    starterHTML: '<main>\n  <!-- Build your profile card here -->\n</main>',
+    testCases: [html('Semantic profile article', 'article.profile'), html('Name heading', 'article.profile h1'), html('Biography', 'article.profile p'), html('Accessible portrait', 'article.profile img[alt]:not([alt=""])', 'quality'), html('Contact link', 'article.profile a[href^="mailto:"]')],
+    hints: ['Use article for independently meaningful content.', 'Alt text should describe the portrait.'],
+  },
+  {
+    title: 'Registration Form', category: 'HTML', difficulty: 'Medium',
+    description: 'Create an accessible registration form with native browser validation.',
+    instructions: ['Create form#registration with required email and password inputs (IDs email and password).', 'Use label[for] to label both fields.', 'Include a submit button.'],
+    starterHTML: '<form id="registration">\n  <!-- Add labeled fields -->\n</form>',
+    testCases: [html('Email input', 'form#registration input#email[type="email"][required]'), html('Password input', 'form#registration input#password[type="password"][required]'), html('Email label', 'label[for="email"]', 'quality'), html('Password label', 'label[for="password"]', 'quality'), html('Submit button', 'form#registration button[type="submit"]')],
+    hints: ['The for attribute must match the input ID.', 'Use the required boolean attribute.'],
+  },
+  {
+    title: 'Navigation Bar', category: 'HTML', difficulty: 'Easy',
+    description: 'Build a semantic navigation menu with an accessible current-page marker.',
+    instructions: ['Create nav with aria-label="Main".', 'Use a ul containing at least three li elements and links with href attributes.', 'Mark the current link with aria-current="page".'],
+    starterHTML: '<header>\n  <!-- Navigation goes here -->\n</header>',
+    testCases: [attr('Named navigation', 'nav', 'aria-label', 'Main'), html('List items', 'nav ul li', 'structure', 3), html('Navigation links', 'nav ul li a[href]', 'structure', 3), attr('Current page', 'nav a', 'aria-current', 'page')],
+    hints: ['A navigation landmark can have an accessible name.', 'Use aria-current on the active link.'],
+  },
+  {
+    title: 'Product Card', category: 'HTML', difficulty: 'Easy',
+    description: 'Mark up a product with its image, title, price and purchase button.',
+    instructions: ['Create article.product with an h2.', 'Include an image with non-empty alt text, p.price and button[type="button"].'],
+    starterHTML: '<section class="catalog">\n  <!-- Add a product -->\n</section>',
+    testCases: [html('Product article', 'article.product'), html('Product name', 'article.product h2'), html('Product image', 'article.product img[alt]:not([alt=""])', 'quality'), html('Price', 'article.product p.price'), html('Purchase button', 'article.product button[type="button"]')],
+    hints: ['Use a heading to label the product.', 'Set button type explicitly.'],
+  },
+  {
+    title: 'Center the Card', category: 'CSS', difficulty: 'Easy',
+    description: 'Center a card horizontally and vertically using flexbox.',
+    instructions: ['Set .stage display:flex, justify-content:center and align-items:center.', 'Give .stage min-height:100vh.'],
+    starterHTML: '<main class="stage"><article class="card">Centered card</article></main>',
+    starterCSS: '.stage {\n  /* Center the card */\n}\n.card { padding: 2rem; }',
+    testCases: [css('Flex container', '.stage', 'display', 'flex'), css('Horizontal center', '.stage', 'justify-content', 'center'), css('Vertical center', '.stage', 'align-items', 'center'), css('Viewport height', '.stage', 'min-height', '100vh')],
+    hints: ['Use both main-axis and cross-axis alignment.', '100vh fills the viewport height.'],
+  },
+  {
+    title: 'Flexbox Layout', category: 'CSS', difficulty: 'Medium',
+    description: 'Lay out three evenly distributed panels with a consistent gap.',
+    instructions: ['Set .panels display:flex, gap:1rem and flex-wrap:wrap.', 'Set .panel flex:1.'],
+    starterHTML: '<div class="panels"><div class="panel">One</div><div class="panel">Two</div><div class="panel">Three</div></div>',
+    starterCSS: '.panels { }\n.panel { }',
+    testCases: [css('Flex layout', '.panels', 'display', 'flex'), css('Spacing', '.panels', 'gap', '1rem'), css('Wrapping', '.panels', 'flex-wrap', 'wrap'), css('Equal growth', '.panel', 'flex', '1')],
+    hints: ['The parent controls wrapping and gaps.', 'flex: 1 lets each panel grow.'],
+  },
+  {
+    title: 'Responsive Product Grid', category: 'CSS', difficulty: 'Hard',
+    description: 'Create a three-column product grid that becomes a single column on small screens.',
+    instructions: ['Set .products display:grid, grid-template-columns:repeat(3, 1fr), and gap:1rem.', 'Inside @media (max-width: 600px), set .products grid-template-columns:1fr.'],
+    starterHTML: '<section class="products"><article>A</article><article>B</article><article>C</article></section>',
+    starterCSS: '.products { }\n@media (max-width: 600px) {\n  .products { }\n}',
+    testCases: [css('Grid layout', '.products', 'display', 'grid'), css('Three columns', '.products', 'grid-template-columns', 'repeat(3, 1fr)'), css('Grid gap', '.products', 'gap', '1rem'), css('Mobile column', '.products', 'grid-template-columns', '1fr', '(max-width: 600px)')],
+    hints: ['Use repeat for equal-width tracks.', 'Override the column declaration inside the media query.'],
+  },
+  {
+    title: 'Hover Animation', category: 'CSS', difficulty: 'Medium',
+    description: 'Add an interactive button transition while respecting reduced-motion preferences.',
+    instructions: ['Set .action transition:transform 200ms ease.', 'Set .action:hover transform:scale(1.05).', 'Inside @media (prefers-reduced-motion: reduce), set .action transition:none.'],
+    starterHTML: '<button class="action" type="button">Explore</button>',
+    starterCSS: '.action { }\n.action:hover { }',
+    testCases: [css('Transition', '.action', 'transition', 'transform 200ms ease'), css('Hover transform', '.action:hover', 'transform', 'scale(1.05)'), css('Reduced motion', '.action', 'transition', 'none', '(prefers-reduced-motion: reduce)')],
+    hints: ['Use the :hover pseudo-class.', 'Reduced-motion preferences can disable transitions.'],
+  },
+  {
+    title: 'Counter', category: 'JavaScript', difficulty: 'Easy',
+    description: 'Wire up an increment button and display a counter. Static checks inspect syntax, not runtime behavior.',
+    instructions: ['Include button#increment and output#count.', 'Declare a counter variable and register a click handler with addEventListener.', 'Use an update expression such as count++ and assign the displayed count.'],
+    starterHTML: '<button id="increment" type="button">Increment</button><output id="count">0</output>',
+    starterJS: '// Connect the button to a counter\n',
+    testCases: [html('Increment button', 'button#increment'), html('Counter output', 'output#count'), call('Event registration', 'addEventListener'), node('Counter variable', 'VariableDeclaration'), node('Increment expression', 'UpdateExpression'), node('Display assignment', 'AssignmentExpression')],
+    hints: ['Use document.querySelector to find elements.', 'Increment the variable inside the handler.'],
+  },
+  {
+    title: 'Todo List', category: 'JavaScript', difficulty: 'Medium',
+    description: 'Add todo items using DOM creation methods and an event listener. Checks are static, not behavioral.',
+    instructions: ['Include input#todo-input, button#add and ul#todos.', 'Register a listener with addEventListener.', 'Create list items with document.createElement and add them using appendChild.'],
+    starterHTML: '<input id="todo-input" aria-label="New todo"><button id="add" type="button">Add</button><ul id="todos"></ul>',
+    starterJS: '// Create and append list items on click\n',
+    testCases: [html('Todo input', 'input#todo-input'), html('Add button', 'button#add'), html('Todo list', 'ul#todos'), call('Event listener', 'addEventListener'), call('Create list item', 'document.createElement'), call('Append item', 'appendChild')],
+    hints: ['Use textContent instead of injecting untrusted HTML.', 'Create an li for every non-empty input value.'],
+  },
+  {
+    title: 'Modal', category: 'JavaScript', difficulty: 'Medium',
+    description: 'Use a native dialog with open and close controls. Static checks cannot prove interaction works.',
+    instructions: ['Include dialog#modal, button#open and button#close.', 'Register listeners with addEventListener.', 'Use showModal() and close() to control the dialog.'],
+    starterHTML: '<button id="open" type="button">Open</button><dialog id="modal"><p>Hello</p><button id="close" type="button">Close</button></dialog>',
+    starterJS: '// Wire up open and close controls\n',
+    testCases: [html('Native dialog', 'dialog#modal'), html('Open control', 'button#open'), html('Close control', 'button#close'), call('Event listeners', 'addEventListener'), call('Show dialog', 'showModal'), call('Close dialog', 'close')],
+    hints: ['A native dialog handles modal focus behavior.', 'Call showModal on the dialog element.'],
+  },
+  {
+    title: 'Form Validation', category: 'JavaScript', difficulty: 'Hard',
+    description: 'Validate a form before submission and show an accessible error. Validation here is static only.',
+    instructions: ['Include form#signup, a required email input and a [role="alert"] error element.', 'Register a submit listener with addEventListener and call preventDefault.', 'Use checkValidity() and an if statement to handle invalid input.'],
+    starterHTML: '<form id="signup"><input id="email" type="email" required aria-label="Email"><button type="submit">Join</button><p role="alert"></p></form>',
+    starterJS: '// Validate and report errors on submit\n',
+    testCases: [html('Signup form', 'form#signup'), html('Required email', 'form#signup input[type="email"][required]'), html('Accessible error', '[role="alert"]', 'quality'), call('Submit listener', 'addEventListener'), call('Prevent submission', 'preventDefault'), call('Check validity', 'checkValidity'), node('Conditional validation', 'IfStatement')],
+    hints: ['checkValidity returns a boolean.', 'Use an alert region for feedback.'],
+  },
+];
+export const challenges = definitions.map(d => ({ ...d, slug: d.title.toLowerCase().replaceAll(' ', '-'), starterHTML: d.starterHTML || '', starterCSS: d.starterCSS || '', starterJS: d.starterJS || '', maxAttempts: 10, timeLimit: 1800, xp: { Easy: 50, Medium: 100, Hard: 200 }[d.difficulty] }));
+export const achievements = [
+  ['first-challenge', 'First Challenge', 'challengesSolved', 1], ['ten-challenges', '10 Challenges', 'challengesSolved', 10],
+  ['fifty-challenges', '50 Challenges', 'challengesSolved', 50], ['perfect-score', 'Perfect Score', 'bestScore', 100],
+  ['seven-day-streak', '7 Day Streak', 'longestStreak', 7], ['thirty-day-streak', '30 Day Streak', 'longestStreak', 30],
+  ['css-master', 'CSS Master', 'CSS', 4], ['javascript-beginner', 'JavaScript Beginner', 'JavaScript', 1],
+].map(([key, name, metric, threshold]) => ({ key, name, metric, threshold, description: `Reach ${threshold} for ${metric}.` }));

@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
+import * as controller from '../controllers/submissionController.js';
+import { authenticate } from '../middleware/auth.js';
+import { validate, submission, pagination, validId } from '../utils/validation.js';
+const router = Router();
+router.use(authenticate);
+router.post('/', rateLimit({ windowMs: 60000, limit: 20, keyGenerator: req => String(req.user._id), standardHeaders: 'draft-8', legacyHeaders: false, message: { success: false, message: 'Too many submissions' } }), validate(submission), controller.create);
+router.get('/me', validate(pagination.strict(), 'query'), controller.history);
+router.get('/:id', validId, controller.detail);
+export default router;

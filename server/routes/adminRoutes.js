@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import * as controller from '../controllers/adminController.js';
+import { authenticate, adminOnly } from '../middleware/auth.js';
+import { validate, pagination, team, member, validId } from '../utils/validation.js';
+import challengeRoutes from './challengeRoutes.js';
+const router = Router();
+router.use(authenticate, adminOnly);
+router.get('/dashboard', controller.dashboard);
+router.get('/users', validate(pagination.strict(), 'query'), controller.users);
+router.get('/submissions', validate(pagination.strict(), 'query'), controller.submissions);
+router.get('/teams', validate(pagination.strict(), 'query'), controller.teams);
+router.post('/teams', validate(team), controller.createTeam);
+router.put('/users/:id/team', validId, validate(member), controller.assignTeam);
+router.use('/challenges', challengeRoutes);
+export default router;
