@@ -108,7 +108,7 @@ export default function PollDetail() {
                   <span className="relative flex items-center justify-between gap-3">
                     <span className="flex items-center gap-2.5 text-sm font-medium text-slate-800">
                       {canVote ? (
-                        <span className={`flex h-4.5 w-4.5 h-5 w-5 items-center justify-center rounded-full border-2 ${isSel ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300'}`}>
+                        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSel ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300'}`}>
                           {isSel && <CheckCircle2 className="h-3.5 w-3.5" />}
                         </span>
                       ) : (

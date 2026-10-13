@@ -34,6 +34,29 @@ let closeDB;
 let User;
 let sharedMode = false;
 
+/** Remove this suite's fixture data (before AND after each run). */
+async function wipeFixtures() {
+  const Challenge = require('../src/models/Challenge');
+  const Submission = require('../src/models/Submission');
+  const Poll = require('../src/models/Poll');
+  const Event = require('../src/models/Event');
+  const { Post, Comment, Like } = require('../src/models/community');
+  const staleChallenges = await Challenge.find({
+    title: { $in: ['Build a Dashboard', 'Expired sprint task'] },
+  }).select('_id');
+  const staleIds = staleChallenges.map((c) => c._id);
+  // Sequential on purpose: the embedded engine is unhappy under pipelined
+  // concurrent commands (observed native segfaults with Promise.all).
+  await User.deleteMany({ username: { $in: ['alice', 'bob', 'admin1'] } });
+  await Submission.deleteMany({ challenge: { $in: staleIds } });
+  await Challenge.deleteMany({ _id: { $in: staleIds } });
+  await Poll.deleteMany({ question: 'Preferred stack for the next sprint?' });
+  await Event.deleteMany({ title: { $in: ['Timeboxed workshop', 'Regular meetup'] } });
+  await Post.deleteMany({ kind: 'submission', title: /Build a Dashboard/ });
+  await Comment.deleteMany({});
+  await Like.deleteMany({});
+}
+
 let ipCounter = 0;
 /** Unique forwarded IP per call so auth rate limits never trip the suite. */
 const fwd = () => ({ 'X-Forwarded-For': `10.1.${Math.floor(ipCounter / 250)}.${(ipCounter++ % 250) + 1}` });
@@ -108,32 +131,13 @@ beforeAll(async () => {
   }
   if (!shared) await connectDB();
 
-  // Wipe fixtures from previous test runs (important in shared-dev-DB mode).
-  const FixtureUser = User;
-  const Challenge = require('../src/models/Challenge');
-  const Submission = require('../src/models/Submission');
-  const Poll = require('../src/models/Poll');
-  const Event = require('../src/models/Event');
-  const { Post, Comment, Like } = require('../src/models/community');
-  const staleChallenges = await Challenge.find({
-    title: { $in: ['Build a Dashboard', 'Expired sprint task'] },
-  }).select('_id');
-  const staleIds = staleChallenges.map((c) => c._id);
-  // Sequential on purpose: the embedded engine is unhappy under pipelined
-  // concurrent commands (observed native segfaults with Promise.all).
-  await FixtureUser.deleteMany({ username: { $in: ['alice', 'bob', 'admin1'] } });
-  await Submission.deleteMany({ challenge: { $in: staleIds } });
-  await Challenge.deleteMany({ _id: { $in: staleIds } });
-  await Poll.deleteMany({ question: 'Preferred stack for the next sprint?' });
-  await Event.deleteMany({ title: { $in: ['Timeboxed workshop', 'Regular meetup'] } });
-  await Post.deleteMany({ kind: 'submission', title: /Build a Dashboard/ });
-  await Comment.deleteMany({});
-  await Like.deleteMany({});
-
+  await wipeFixtures(); // start from a clean slate (shared dev DB may be dirty)
   await User.init();
 });
 
 afterAll(async () => {
+  // Leave the shared dev DB as clean as we found it (fixtures only).
+  try { await wipeFixtures(); } catch (_) { /* ignore */ }
   // Own engine: close it (engine.close is safe; mongoose.disconnect would
   // segfault the embedded engine via endSessions). Shared mode: leave the dev
   // server's engine strictly alone — forceExit cleans up our client sockets.
