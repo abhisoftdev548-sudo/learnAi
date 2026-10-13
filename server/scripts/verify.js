@@ -639,6 +639,46 @@ render();`,
     assert.equal(system.body.data.database.state, 'connected');
   });
 
+  await check('the submission response carries every field the client renders', async () => {
+    const challenge = (await c('GET', '/api/challenges/center-the-card')).body.data;
+    const response = await c('POST', '/api/submissions', {
+      challengeId: challenge.id,
+      htmlCode: '<main class="stage"><section class="card"><h1>Centred</h1></section></main>',
+      cssCode: '.stage { display: flex; align-items: center; justify-content: center; min-height: 100vh; }\n.card { max-width: 420px; }\n@media (max-width: 480px) { .card { padding: 1rem; } }',
+      jsCode: '',
+      timeTaken: 240,
+      observations: {
+        'center-measure-desktop': { cardFound: true, cardWidth: 420, cardHeight: 220, offsetX: 0, offsetY: 0 },
+        'center-measure-mobile': { cardFound: true, cardWidth: 312, viewportWidth: 360, offsetX: 0, overflow: 0 },
+      },
+    });
+    assert.equal(response.status, 201, JSON.stringify(response.body));
+    const data = response.body.data;
+
+    // Shapes the workspace result modal and history table rely on.
+    for (const key of ['submission', 'result', 'breakdown', 'verification', 'user', 'attempts', 'achievements', 'nextChallenge']) {
+      assert.ok(key in data, `missing "${key}" in the submission response`);
+    }
+    assert.equal(typeof data.result.score, 'number');
+    assert.equal(typeof data.result.isPerfect, 'boolean');
+    assert.equal(typeof data.result.xpEarned, 'number');
+    assert.equal(typeof data.result.baseXp, 'number');
+    assert.equal(typeof data.result.bonusXp, 'number');
+    assert.ok(Array.isArray(data.result.bonuses), 'result.bonuses must be an array');
+    assert.ok(Array.isArray(data.achievements), 'achievements must be the list of newly unlocked entries');
+    assert.ok(data.attempts.label.startsWith('Attempts:'), 'attempt label is rendered verbatim in the workspace');
+    assert.equal(data.breakdown.groups.reduce((sum, group) => sum + group.max, 0), 100);
+    assert.ok(Array.isArray(data.breakdown.testResults) && data.breakdown.testResults.length > 0);
+    assert.ok(data.breakdown.categoryScores.html && typeof data.breakdown.categoryScores.html.max === 'number');
+    assert.equal(data.user.level, response.body.data.user.levelProgress.level);
+    assert.equal(data.submission.id, String(data.submission._id ?? data.submission.id));
+
+    // Anonymous reads of a submission by id must not leak another user's code.
+    const stranger = createClient();
+    const denied = await stranger('GET', `/api/submissions/${data.submission.id}`);
+    assert.equal(denied.status, 401);
+  });
+
   /* ---------------- progression maths ---------------- */
   await check('level thresholds are consistent with the XP curve', async () => {
     const { levelFromXp, xpForLevel, levelProgress } = await import('../services/xp.service.js');

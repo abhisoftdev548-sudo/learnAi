@@ -30,8 +30,12 @@ export const getChallenge = asyncHandler(async (req, res) => {
     includeUnpublished: req.user?.role === 'admin',
   });
 
+  const isAdmin = req.user?.role === 'admin';
   const payload = {
     ...challenge.toDetailJSON(),
+    // Admins author the checks, so they receive the full definitions (including
+    // selectors, operators and patterns) that members never see.
+    ...(isAdmin ? { testCases: challenge.toAdminJSON().testCases } : {}),
     attempts,
     progress,
     bestScore,
