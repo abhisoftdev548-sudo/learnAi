@@ -42,4 +42,36 @@ function handleUploadError(err, req, res, next) {
   return next(err);
 }
 
-module.exports = { upload, handleUploadError, UPLOAD_ROOT };
+/**
+ * Work-submission uploads: images plus common document/archive types.
+ * Kept stricter than an open file store: whitelist + size cap.
+ */
+const WORK_MIME = new Set([
+  ...ALLOWED_MIME,
+  'application/pdf',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+]);
+
+const WORK_MAX_MB = 8;
+
+const workStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_ROOT),
+  filename: (req, file, cb) => {
+    const ext = (path.extname(file.originalname) || '').toLowerCase().replace(/[^a-z0-9.]/g, '') || '.bin';
+    cb(null, `work-${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+  },
+});
+
+const uploadWork = multer({
+  storage: workStorage,
+  limits: { fileSize: WORK_MAX_MB * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (WORK_MIME.has(file.mimetype)) return cb(null, true);
+    cb(ApiError.badRequest('Unsupported file type (allowed: images, pdf, zip, docx, txt)', 'INVALID_FILE_TYPE'));
+  },
+});
+
+module.exports = { upload, handleUploadError, uploadWork, UPLOAD_ROOT, WORK_MAX_MB };
