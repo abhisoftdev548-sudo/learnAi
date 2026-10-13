@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Rocket, Eye, EyeOff } from 'lucide-react';
@@ -16,6 +16,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [code, setCode] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+
+  useEffect(() => {
+    document.title = 'Sign in · Growth Circle';
+  }, []);
 
   // Already signed in?
   if (authStatus === 'in') {

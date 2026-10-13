@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Rocket, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -25,6 +25,10 @@ export default function Register() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+
+  useEffect(() => {
+    document.title = 'Request access · Growth Circle';
+  }, []);
 
   if (authStatus === 'in') navigate('/dashboard', { replace: true });
 
