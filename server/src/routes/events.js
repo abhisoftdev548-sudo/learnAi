@@ -14,7 +14,7 @@ router.delete('/:id/register', c.cancelRegistration);
 router.post('/', requireAdmin, c.createEvent);
 router.patch('/:id', requireAdmin, c.updateEvent);
 router.post('/:id/status', requireAdmin, c.setEventStatus);
-router.delete('/:id', requireAdmin, c.deleteEvent);
+router.delete('/:id', c.deleteEvent);
 router.get('/:id/registrations', requireAdmin, c.listRegistrations);
 router.post('/:id/attendance', requireAdmin, c.setAttendance);
 

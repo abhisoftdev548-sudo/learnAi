@@ -34,7 +34,12 @@ export default function Pending() {
     if (authStatus === 'in') navigate('/dashboard', { replace: true });
   }, [authStatus, navigate]);
 
-  const key = authStatus === 'out' ? (location.state?.code === 'ACCOUNT_REJECTED' ? 'rejected' : 'pending') : authStatus;
+  const codeToStatus = {
+    PENDING_APPROVAL: 'pending',
+    ACCOUNT_REJECTED: 'rejected',
+    ACCOUNT_SUSPENDED: 'suspended',
+  };
+  const key = authStatus === 'out' ? (codeToStatus[location.state?.code] || 'pending') : authStatus;
   const info = MESSAGES[key] || MESSAGES.pending;
   const Icon = info.icon;
   const justRegistered = location.state?.justRegistered;

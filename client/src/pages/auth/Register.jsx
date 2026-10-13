@@ -51,8 +51,8 @@ export default function Register() {
     setError('');
     setFieldErrors({});
 
+    // The API validates confirmPassword as part of the registration payload.
     const payload = { ...form };
-    delete payload.confirmPassword;
     let res;
     if (photo) {
       const fd = new FormData();
@@ -70,10 +70,7 @@ export default function Register() {
     }
     setError(res.message);
     if (res.code === 'VALIDATION_ERROR') {
-      // pull field-level errors if the API returned them
-      try {
-        // message only — field errors come through api helper on next attempt
-      } catch { /* noop */ }
+      setFieldErrors(res.fieldErrors);
     }
   };
 
@@ -85,7 +82,7 @@ export default function Register() {
             <Rocket className="h-5 w-5" />
           </span>
           <span className="text-xl font-bold text-slate-900">
-            Team<span className="text-primary-600">Forge</span>
+            Growth Circle
           </span>
         </Link>
 

@@ -20,8 +20,8 @@ function RequirementInput({ req, value, onChange, error }) {
 
   const uploadFile = async (file) => {
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error('File must be 8MB or smaller');
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be 2MB or smaller');
       return;
     }
     setUploading(true);
@@ -78,7 +78,7 @@ function RequirementInput({ req, value, onChange, error }) {
             ref={fileRef}
             type="file"
             className="hidden"
-            accept={req.type === 'image' ? 'image/*' : '.pdf,.zip,.docx,.txt,image/*'}
+            accept="image/*"
             onChange={(e) => uploadFile(e.target.files?.[0])}
           />
           <button type="button" className="btn-secondary shrink-0" onClick={() => fileRef.current?.click()} disabled={uploading}>
@@ -186,6 +186,9 @@ export default function ChallengeDetail() {
         {/* Main info */}
         <div className="space-y-6 lg:col-span-2">
           <div className="card p-6">
+            {c.coverImage && (
+              <img src={c.coverImage} alt="" className="mb-5 aspect-video w-full rounded-xl object-contain bg-slate-50" referrerPolicy="no-referrer" />
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <span className="badge bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">
                 {CATEGORY_LABELS[c.category] || c.category}

@@ -12,7 +12,7 @@ router.post('/', c.createPost);
 router.get('/reports/all', requireAdmin, c.listReports);
 router.get('/reports', requireAdmin, c.listReports);
 router.patch('/reports/:id', requireAdmin, c.resolveReport);
-router.delete('/:id', requireAdmin, c.removePost);
+router.delete('/:id', c.removePost);
 
 router.get('/:id', c.getPost);
 router.post('/:id/like', c.likePost);

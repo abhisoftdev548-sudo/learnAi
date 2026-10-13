@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, X, Save, Rocket, Link2 } from 'lucide-react';
-import api, { apiError } from '../../services/api';
+import api, { apiError, uploadImages } from '../../services/api';
 import { PageLoader, Spinner } from '../../components/Spinner';
 import { Field, Input, Textarea, Select, SubmitButton } from '../../components/Form';
 import { CATEGORIES, DIFFICULTIES, SUBMISSION_TYPES } from '../../utils/constants';
@@ -33,6 +33,7 @@ export default function AdminChallengeForm() {
   const [busy, setBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
   const [error, setError] = useState('');
+  const [coverFile, setCoverFile] = useState(null);
 
   const empty = {
     title: '', description: '', instructions: '', category: 'coding', difficulty: 'medium',
@@ -102,6 +103,7 @@ export default function AdminChallengeForm() {
         referenceLinks: form.referenceLinks.filter(Boolean),
         ...(nextStatus ? { status: nextStatus } : {}),
       };
+      if (coverFile) payload.coverImage = (await uploadImages([coverFile]))[0];
       const { data } = editing
         ? await api.patch(`/challenges/${id}`, payload)
         : await api.post('/challenges', payload);
@@ -150,6 +152,10 @@ export default function AdminChallengeForm() {
 
         <Field label="Description" required hint="What should members achieve?">
           <Textarea rows={4} value={form.description} onChange={set('description')} maxLength={5000} />
+        </Field>
+        <Field label="Cover image" hint="Optional URL or upload (PNG, JPG, WEBP, GIF)">
+          <Input value={form.coverImage} onChange={set('coverImage')} placeholder="https://…" />
+          <input className="mt-2" type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
         </Field>
 
         <Field label="Instructions" hint="Step-by-step guidance (optional)">

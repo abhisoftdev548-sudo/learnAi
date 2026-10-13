@@ -8,7 +8,7 @@ let server = null;
 async function start() {
   await connectDB();
   server = app.listen(env.port, '0.0.0.0', () => {
-    console.log(`[server] TeamForge API listening on http://0.0.0.0:${env.port} (${env.nodeEnv})`);
+    console.log(`[server] Growth Circle API listening on http://0.0.0.0:${env.port} (${env.nodeEnv})`);
   });
 }
 

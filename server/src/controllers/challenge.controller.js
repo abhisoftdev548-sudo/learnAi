@@ -36,7 +36,11 @@ function validateChallengeBody(body, { partial = false } = {}) {
     status: [oneOf(['draft', 'published', 'archived'])],
     requirements: [isArray()],
     referenceLinks: [isArray()],
-    coverImage: [isUrl()],
+    coverImage: [custom((v) => (
+      v === undefined || v === '' || /^https?:\/\//.test(String(v))
+        ? null
+        : 'Cover image must be a valid URL'
+    ))],
     allowLateSubmissions: [custom((v) => (v === undefined || typeof v === 'boolean' ? null : 'must be true or false'))],
     allowResubmission: [custom((v) => (v === undefined || typeof v === 'boolean' ? null : 'must be true or false'))],
     communityVisibility: [oneOf(['auto', 'private'])],
@@ -336,6 +340,10 @@ const deleteChallenge = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid challenge id');
   const challenge = await Challenge.findById(req.params.id);
   if (!challenge) throw ApiError.notFound('Challenge not found');
+  const isOwner = String(challenge.createdBy) === String(req.user._id);
+  if (!isOwner && req.user.role !== 'admin') {
+    throw ApiError.forbidden('Only the challenge creator or an admin can delete this challenge', 'DELETE_FORBIDDEN');
+  }
   const subs = await Submission.countDocuments({ challenge: challenge._id });
   if (subs > 0) {
     throw ApiError.conflict(

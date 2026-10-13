@@ -74,6 +74,7 @@ export default function PollDetail() {
         </div>
 
         <h1 className="mt-4 text-2xl font-bold text-slate-900">{p.question}</h1>
+        {p.image && <img src={p.image} alt="" className="mt-4 max-h-72 w-full rounded-xl bg-slate-50 object-contain" referrerPolicy="no-referrer" />}
         {p.description && <p className="mt-2 text-sm text-slate-500">{p.description}</p>}
         <p className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-400">
           <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatDateTime(p.startsAt)} → {formatDateTime(p.endsAt)}</span>

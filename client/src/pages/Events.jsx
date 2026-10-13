@@ -72,6 +72,9 @@ export default function Events() {
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {data.items.map((e) => (
               <Link key={e.id} to={`/events/${e.id}`} className="card group flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-pop">
+                {e.coverImage && (
+                  <img src={e.coverImage} alt="" className="mb-4 aspect-video w-full rounded-xl object-cover" loading="lazy" referrerPolicy="no-referrer" />
+                )}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-wrap gap-1.5">
                     <span className="badge bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-600/20">

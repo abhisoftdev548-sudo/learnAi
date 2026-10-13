@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import api, { apiError, apiCode } from '../services/api';
+import api, { apiError, apiCode, apiFieldErrors } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
       });
       return { ok: true, user: data.data.user };
     } catch (err) {
-      return { ok: false, message: apiError(err), code: apiCode(err) };
+      return { ok: false, message: apiError(err), code: apiCode(err), fieldErrors: apiFieldErrors(err) };
     }
   }, []);
 

@@ -13,6 +13,7 @@ const NAV = [
   { to: '/challenges', label: 'Challenges', icon: Target },
   { to: '/events', label: 'Events', icon: CalendarDays },
   { to: '/community', label: 'Community', icon: MessagesSquare },
+  { to: '/chat', label: 'Group Chat', icon: MessagesSquare },
   { to: '/polls', label: 'Polls', icon: BarChart3 },
   { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { to: '/members', label: 'Members', icon: Users },
@@ -100,7 +101,7 @@ export default function DashboardLayout({ children, admin = false }) {
         <Rocket className="h-5 w-5" />
       </span>
       <span className="text-lg font-bold tracking-tight text-slate-900">
-        Team<span className="text-primary-600">Forge</span>
+        Growth Circle
       </span>
     </Link>
   );

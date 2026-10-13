@@ -24,7 +24,9 @@ const env = {
     .map((s) => s.trim())
     .filter(Boolean),
   maxUploadMb: parseInt(process.env.MAX_UPLOAD_MB || '2', 10),
-  uploadDir: process.env.UPLOAD_DIR || 'uploads',
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
 };
 
 env.allowedOrigins = [...new Set([...env.clientUrls, ...env.corsOrigins])];

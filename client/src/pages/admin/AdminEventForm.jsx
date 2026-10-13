@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save, Rocket, Video, Lock, Link2, X, Plus } from 'lucide-react';
-import api, { apiError } from '../../services/api';
+import api, { apiError, uploadImages } from '../../services/api';
 import { PageLoader, Spinner } from '../../components/Spinner';
 import { Field, Input, Textarea, Select, SubmitButton } from '../../components/Form';
 import { EVENT_CATEGORIES } from '../../utils/constants';
@@ -22,6 +22,7 @@ export default function AdminEventForm() {
   const [loading, setLoading] = useState(editing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [coverFile, setCoverFile] = useState(null);
 
   const empty = {
     title: '', description: '', hostName: '', category: 'team-meeting',
@@ -69,6 +70,7 @@ export default function AdminEventForm() {
     setBusy(true);
     try {
       const payload = { ...form, ...(nextStatus ? { status: nextStatus } : {}) };
+      if (coverFile) payload.coverImage = (await uploadImages([coverFile]))[0];
       const { data } = editing
         ? await api.patch(`/events/${id}`, payload)
         : await api.post('/events', payload);
@@ -146,8 +148,9 @@ export default function AdminEventForm() {
           <Field label="Registration deadline" hint="Optional — leave empty until event day">
             <Input type="date" value={form.registrationDeadline} onChange={set('registrationDeadline')} />
           </Field>
-          <Field label="Cover image URL" hint="Optional">
+          <Field label="Cover image" hint="Optional URL or upload (PNG, JPG, WEBP, GIF)">
             <Input value={form.coverImage} onChange={set('coverImage')} placeholder="https://…" />
+            <input className="mt-2" type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files?.[0] || null)} />
           </Field>
         </div>
 

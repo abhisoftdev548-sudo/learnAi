@@ -3,7 +3,6 @@ const router = require('express').Router();
 const multer = require('multer');
 const User = require('../models/User');
 const { notify } = require('../models/notification.helper');
-const env = require('../config/env');
 const { validate, required, minLength, maxLength, email, pattern } = require('../utils/validate');
 const { ApiError, asyncHandler, ok } = require('../utils/errors');
 const {
@@ -12,7 +11,8 @@ const {
   clearAuthCookie,
   requireAuth,
 } = require('../middleware/auth');
-const { upload } = require('../middleware/upload');
+const { imageUpload } = require('../middleware/upload');
+const { uploadImage } = require('../services/cloudinary.service');
 const rateLimit = require('express-rate-limit');
 
 const registerLimiter = rateLimit({
@@ -63,7 +63,7 @@ router.post(
   (req, res, next) => {
     // Accept either JSON or a single optional photo field.
     if (req.is('multipart/form-data')) {
-      upload.single('photo')(req, res, (err) => {
+      imageUpload.single('photo')(req, res, (err) => {
         if (err) return next(err);
         // Normalize: multer put the file on req.file; body stays in req.body.
         next();
@@ -111,7 +111,7 @@ router.post(
       bio: (body.bio || '').trim(),
       role: 'member', // hard-coded: never taken from the client
       status: 'pending', // hard-coded: always awaiting approval
-      photoUrl: req.file ? `/uploads/${req.file.filename}` : '',
+      photoUrl: req.file ? await uploadImage(req.file.buffer, 'growth-circle/avatars') : '',
     });
 
     // Tell admins there is someone to review.

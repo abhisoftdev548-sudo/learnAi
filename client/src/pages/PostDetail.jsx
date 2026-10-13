@@ -10,6 +10,29 @@ import { PageLoader, Spinner } from '../components/Spinner';
 import { Field, Textarea, SubmitButton } from '../components/Form';
 import { timeAgo, formatDateTime, truncate } from '../utils/format';
 
+function PostImage({ src }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-50 px-2 text-center text-xs text-slate-400">
+        Image cannot be loaded
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={String(src)}
+      alt=""
+      className="h-full w-full object-contain"
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function PostDetail() {
   const { id } = useParams();
   const { user, isAdmin } = useAuth();
@@ -114,10 +137,10 @@ export default function PostDetail() {
             )}
 
             {post.images?.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-2 justify-items-center gap-3">
                 {post.images.map((img) => (
-                  <a key={img} href={img} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl border border-slate-100">
-                    <img src={img} alt="" className="w-full object-cover" loading="lazy" />
+                <a key={img} href={img} target="_blank" rel="noreferrer" className="aspect-[9/16] w-full max-w-40 overflow-hidden rounded-xl border border-slate-100">
+                    <PostImage src={img} />
                   </a>
                 ))}
               </div>

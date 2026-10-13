@@ -13,7 +13,7 @@ router.get('/:id', c.getChallenge);
 router.post('/', requireAdmin, c.createChallenge);
 router.patch('/:id', requireAdmin, c.updateChallenge);
 router.post('/:id/status', requireAdmin, c.setChallengeStatus);
-router.delete('/:id', requireAdmin, c.deleteChallenge);
+router.delete('/:id', c.deleteChallenge);
 router.get('/:id/participation', requireAdmin, c.participationReport);
 
 module.exports = router;

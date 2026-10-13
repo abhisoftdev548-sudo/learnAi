@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  MessagesSquare, Heart, MessageCircle, Plus, ExternalLink, Flag, ImagePlus, X,
+  MessagesSquare, Heart, MessageCircle, Plus, ExternalLink, Flag, ImagePlus, X, Trash2,
 } from 'lucide-react';
-import api, { apiError } from '../services/api';
+import api, { apiError, uploadImages } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
@@ -15,7 +15,47 @@ import Pagination from '../components/Pagination';
 import { Field, Input, Textarea, SubmitButton } from '../components/Form';
 import { timeAgo, truncate } from '../utils/format';
 
-function PostCard({ post, onLike, onReport }) {
+function PostImage({ src }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-50 px-2 text-center text-xs text-slate-400">
+        Image cannot be loaded
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={String(src)}
+      alt=""
+      className="h-full w-full object-contain transition hover:scale-[1.02]"
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function PostCard({ post, onLike, onReport, onDelete }) {
+  const { user } = useAuth();
+  const [deleting, setDeleting] = useState(false);
+
+  const removePost = async () => {
+    if (!window.confirm('Delete this post for everyone?')) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/community/${post.id}`);
+      toast.success('Post deleted');
+      onDelete(post.id);
+    } catch (err) {
+      toast.error(apiError(err));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <article className="card p-5">
       <div className="flex items-start gap-3">
@@ -23,7 +63,7 @@ function PostCard({ post, onLike, onReport }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <Link to={`/members/${post.author?.username}`} className="text-sm font-semibold text-slate-900 hover:text-primary-600">
-              {post.author?.name}
+              {post.author?.name || 'Unknown member'}
             </Link>
             <span className="text-xs text-slate-400">@{post.author?.username} · {timeAgo(post.createdAt)}</span>
             {post.kind === 'submission' && (
@@ -55,10 +95,10 @@ function PostCard({ post, onLike, onReport }) {
           )}
 
           {post.images?.length > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-2 justify-items-center gap-2 sm:grid-cols-3">
               {post.images.map((img) => (
-                <a key={img} href={img} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl border border-slate-100">
-                  <img src={img} alt="" className="h-32 w-full object-cover transition hover:scale-[1.02]" loading="lazy" />
+                <a key={img} href={img} target="_blank" rel="noreferrer" className="aspect-[9/16] w-full max-w-40 overflow-hidden rounded-xl border border-slate-100">
+                  <PostImage src={img} />
                 </a>
               ))}
             </div>
@@ -83,6 +123,17 @@ function PostCard({ post, onLike, onReport }) {
             >
               <Flag className="h-3.5 w-3.5" /> Report
             </button>
+            {(post.author?.id === user?.id || user?.role === 'admin') && (
+              <button
+                type="button"
+                onClick={removePost}
+                disabled={deleting}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 transition hover:text-rose-600"
+                title="Delete this post for everyone"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -101,7 +152,8 @@ export default function Community() {
   const [reportReason, setReportReason] = useState('');
   const [busyReport, setBusyReport] = useState(false);
 
-  const [form, setForm] = useState({ title: '', body: '', links: [] });
+  const [form, setForm] = useState({ title: '', body: '', links: [], images: [] });
+  const [imageFiles, setImageFiles] = useState([]);
   const [busyCreate, setBusyCreate] = useState(false);
 
   const load = () => {
@@ -164,10 +216,12 @@ export default function Community() {
         title: form.title.trim(),
         body: form.body,
         links: form.links.filter((l) => l.url),
+        images: form.images,
       });
       toast.success('Posted to the community 🎉');
       setCreateOpen(false);
-      setForm({ title: '', body: '', links: [] });
+      setForm({ title: '', body: '', links: [], images: [] });
+      setImageFiles([]);
       setPage(1);
       load();
     } catch (err) {
@@ -205,9 +259,19 @@ export default function Community() {
         />
       ) : (
         <>
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="mx-auto grid w-full max-w-2xl grid-cols-1 gap-5">
             {data.items.map((p) => (
-              <PostCard key={p.id} post={p} onLike={onLike} onReport={setReportTarget} />
+              <PostCard
+                key={p.id}
+                post={p}
+                onLike={onLike}
+                onReport={setReportTarget}
+                onDelete={(id) => setData((current) => ({
+                  ...current,
+                  items: current.items.filter((item) => item.id !== id),
+                  total: Math.max(0, current.total - 1),
+                }))}
+              />
             ))}
           </div>
           <Pagination page={data.page} pages={data.pages} total={data.total} onChange={setPage} />
@@ -270,6 +334,22 @@ export default function Community() {
                 <ImagePlus className="h-4 w-4" /> Add link
               </button>
             )}
+          </div>
+          <div className="space-y-2">
+            <p className="label !mb-1">Images (optional, up to 6)</p>
+            <input type="file" accept="image/*" multiple onChange={async (e) => {
+              const files = Array.from(e.target.files || []).slice(0, 6);
+              if (files.some((file) => file.size > 2 * 1024 * 1024)) {
+                toast.error('Each image must be 2MB or smaller');
+                return;
+              }
+              try {
+                const urls = await uploadImages(files);
+                setImageFiles(files);
+                setForm((current) => ({ ...current, images: urls }));
+              } catch (err) { toast.error(apiError(err)); }
+            }} />
+            {imageFiles.length > 0 && <p className="text-xs text-slate-400">{imageFiles.length} image(s) selected</p>}
           </div>
           <p className="text-xs text-slate-400">Posting as {user?.name} · be kind and keep it work-safe.</p>
         </form>

@@ -9,6 +9,7 @@ const { SubmissionReview } = require('../models/Submission');
 const { Post, Comment, Report } = require('../models/community');
 const { notify } = require('../models/notification.helper');
 const { ApiError, asyncHandler, ok } = require('../utils/errors');
+const { eventStartAt } = require('./event.controller');
 
 /** GET /api/admin/stats — admin overview cards (all from real DB counts) */
 const stats = asyncHandler(async (req, res) => {
@@ -34,7 +35,10 @@ const stats = asyncHandler(async (req, res) => {
     Challenge.countDocuments({ status: 'published', deadline: { $gte: now } }),
     Submission.countDocuments({}),
     Submission.countDocuments({ status: { $in: ['submitted', 'under_review'] } }),
-    Event.countDocuments({ status: 'published', date: { $gte: now } }),
+    Event.find({ status: 'published', date: { $gte: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) } })
+      .select('date startTime')
+      .lean()
+      .then((events) => events.filter((event) => eventStartAt(event) >= now).length),
     Poll.countDocuments({ status: 'active', startsAt: { $lte: now }, endsAt: { $gte: now } }),
     Report.countDocuments({ status: 'open' }),
     SubmissionReview.find({ isLatest: true })
@@ -152,7 +156,7 @@ const setUserStatus = asyncHandler(async (req, res) => {
   const messages = {
     approved: {
       title: 'Your account has been approved 🎉',
-      body: 'Welcome to TeamForge! Log in to see challenges, events and the leaderboard.',
+      body: 'Welcome to Growth Circle! Log in to see challenges, events and the leaderboard.',
       link: '/login',
     },
     rejected: {
@@ -194,7 +198,7 @@ const setUserRole = asyncHandler(async (req, res) => {
   await target.save();
   await notify(target._id, 'general',
     role === 'admin' ? 'You are now an administrator' : 'Your role changed to member',
-    role === 'admin' ? 'You have admin access to the TeamForge panel.' : 'You now have standard member permissions.',
+    role === 'admin' ? 'You have admin access to the Growth Circle panel.' : 'You now have standard member permissions.',
     '/admin');
   return ok(res, { user: { id: target._id, status: target.status, role: target.role } });
 });

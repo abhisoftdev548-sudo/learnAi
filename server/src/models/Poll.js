@@ -12,6 +12,7 @@ const pollSchema = new mongoose.Schema(
   {
     question: { type: String, required: true, trim: true, minlength: 3, maxlength: 300 },
     description: { type: String, default: '', maxlength: 1000 },
+    image: { type: String, default: '' },
     options: {
       type: [optionSchema],
       required: true,

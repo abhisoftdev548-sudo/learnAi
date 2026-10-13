@@ -14,6 +14,7 @@ import ChallengeDetail from './pages/ChallengeDetail';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import Community from './pages/Community';
+import GroupChat from './pages/GroupChat';
 import PostDetail from './pages/PostDetail';
 import Polls from './pages/Polls';
 import PollDetail from './pages/PollDetail';
@@ -45,14 +46,8 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route
-        path="/pending"
-        element={
-          <ProtectedRoute approvedOnly={false}>
-            <Pending />
-          </ProtectedRoute>
-        }
-      />
+      {/* Public so users can see their account status before approval creates a session. */}
+      <Route path="/pending" element={<Pending />} />
 
       {/* Member app */}
       <Route element={<AppLayout />}>
@@ -62,6 +57,7 @@ export default function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/events/:id" element={<EventDetail />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/chat" element={<GroupChat />} />
         <Route path="/community/:id" element={<PostDetail />} />
         <Route path="/polls" element={<Polls />} />
         <Route path="/polls/:id" element={<PollDetail />} />

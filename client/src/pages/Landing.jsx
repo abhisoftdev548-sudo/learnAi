@@ -46,7 +46,7 @@ export default function Landing() {
             <Rocket className="h-5 w-5" />
           </span>
           <span className="text-lg font-bold tracking-tight text-slate-900">
-            Team<span className="text-primary-600">Forge</span>
+            Growth Circle
           </span>
         </div>
         <nav className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export default function Landing() {
             <span className="bg-gradient-to-r from-primary-600 to-indigo-500 bg-clip-text text-transparent"> forge your future</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-500">
-            TeamForge combines a private team dashboard, a coding-challenge platform and a
+            Growth Circle combines a private team dashboard, a coding-challenge platform and a
             professional community feed — challenges, events, polls, points and a leaderboard,
             all in one approved-members-only space.
           </p>
@@ -117,7 +117,7 @@ export default function Landing() {
       </section>
 
       <footer className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-slate-400 sm:flex-row sm:px-6 lg:px-8">
-        <p>© {new Date().getFullYear()} TeamForge — team learning &amp; practice platform.</p>
+        <p>© {new Date().getFullYear()} Growth Circle — team learning &amp; practice platform.</p>
         <p>Built with React, Express &amp; MongoDB.</p>
       </footer>
     </div>

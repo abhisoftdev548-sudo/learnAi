@@ -73,26 +73,30 @@ export default function Members() {
         <>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {data.users.map((m) => (
-              <Link key={m.id} to={`/members/${m.username}`} className="card group flex flex-col items-center p-5 text-center transition hover:-translate-y-0.5 hover:shadow-pop">
+              <Link key={m.id} to={`/members/${m.username}`} className="card group flex h-full flex-col items-center p-5 text-center transition hover:-translate-y-0.5 hover:shadow-pop">
                 <Avatar user={m} size="lg" />
-                <p className="mt-3 font-semibold text-slate-900 group-hover:text-primary-600">{m.name}</p>
-                <p className="text-xs text-slate-400">@{m.username}</p>
-                {m.bio && <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-xs text-slate-500">{truncate(m.bio, 90)}</p>}
-                <div className="mt-3 flex w-full items-center justify-center gap-3 border-t border-slate-100 pt-3 text-xs">
+                <p className="mt-3 line-clamp-1 min-h-5 w-full font-semibold text-slate-900 group-hover:text-primary-600">{m.name}</p>
+                <p className="line-clamp-1 min-h-4 w-full text-xs text-slate-400">@{m.username}</p>
+                <p className="mt-2 line-clamp-2 min-h-10 w-full text-xs text-slate-500">
+                  {m.bio ? truncate(m.bio, 90) : ''}
+                </p>
+                <div className="mt-3 flex min-h-9 w-full items-center justify-center gap-3 border-t border-slate-100 pt-3 text-xs">
                   <span className="inline-flex items-center gap-1 font-bold text-amber-600">
                     <Trophy className="h-3.5 w-3.5" /> {m.points}
                   </span>
                   <span className="text-slate-400">{m.completedChallenges} done</span>
                 </div>
-                {m.skills?.length > 0 && (
-                  <div className="mt-2 flex flex-wrap justify-center gap-1">
+                <div className="mt-2 flex min-h-7 flex-wrap items-start justify-center gap-1">
+                  {m.skills?.length > 0 && (
+                    <>
                     {m.skills.slice(0, 3).map((s) => (
                       <span key={s} className="badge bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-500/20">{s}</span>
                     ))}
                     {m.skills.length > 3 && <span className="badge bg-slate-100 text-slate-400">+{m.skills.length - 3}</span>}
-                  </div>
-                )}
-                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary-600 opacity-0 transition group-hover:opacity-100">
+                    </>
+                  )}
+                </div>
+                <span className="mt-auto inline-flex min-h-5 items-center gap-1 pt-3 text-xs font-semibold text-primary-600 opacity-0 transition group-hover:opacity-100">
                   View profile <ArrowRight className="h-3 w-3" />
                 </span>
               </Link>

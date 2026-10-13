@@ -107,6 +107,9 @@ export default function Challenges() {
                   to={`/challenges/${c.id}`}
                   className="card group flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-pop"
                 >
+                  {c.coverImage && (
+                    <img src={c.coverImage} alt="" className="mb-4 aspect-video w-full rounded-xl object-cover" loading="lazy" referrerPolicy="no-referrer" />
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-wrap gap-1.5">
                       <span className="badge bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">

@@ -36,4 +36,13 @@ export function apiFieldErrors(err) {
   }, {});
 }
 
+export async function uploadImages(files) {
+  const fd = new FormData();
+  files.forEach((file) => fd.append('images', file));
+  // Let the browser set the multipart boundary. Setting this header manually
+  // can cause multer to receive an incomplete multipart request.
+  const { data } = await api.post('/uploads/images', fd);
+  return data.data.images.map((image) => image.url);
+}
+
 export default api;

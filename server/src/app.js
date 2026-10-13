@@ -16,7 +16,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security headers. 'crossOriginResourcePolicy' allows the API + client to share
-// an origin in the single-server production setup while uploads still render.
+// an origin in the single-server production setup while Cloudinary images render.
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -41,11 +41,6 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(originCheck);
 
-// Local-dev file storage (see README for production storage guidance).
-const uploadDir = path.join(__dirname, '..', env.uploadDir);
-fs.mkdirSync(uploadDir, { recursive: true });
-app.use('/uploads', express.static(uploadDir, { maxAge: env.isProd ? '7d' : 0, index: false }));
-
 // ---- API routes ------------------------------------------------------------
 app.get('/api/health', (req, res) =>
   res.json({ success: true, data: { status: 'ok', env: env.nodeEnv, time: new Date().toISOString() } })
@@ -59,6 +54,8 @@ app.use('/api/submissions', require('./routes/submissions'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/polls', require('./routes/polls'));
 app.use('/api/community', require('./routes/community'));
+app.use('/api/uploads', require('./routes/uploads'));
+app.use('/api/chat', require('./routes/chat'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 
@@ -70,7 +67,7 @@ const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist, { index: false, maxAge: env.isProd ? '1h' : 0 }));
   // SPA fallback — any non-API GET renders the client app.
-  app.get(/^\/(?!api|uploads).*/, (req, res, next) => {
+  app.get(/^\/(?!api).*/, (req, res, next) => {
     if (req.method !== 'GET') return next();
     res.sendFile(path.join(clientDist, 'index.html'), (err) => err && next());
   });

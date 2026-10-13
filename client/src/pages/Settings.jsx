@@ -97,7 +97,7 @@ export default function Settings() {
       <div className="card flex flex-wrap items-center justify-between gap-4 p-6">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Session</h2>
-          <p className="text-sm text-slate-500">Sign out of TeamForge on this device.</p>
+          <p className="text-sm text-slate-500">Sign out of Growth Circle on this device.</p>
         </div>
         <button type="button" className="btn-danger" onClick={() => setLogoutOpen(true)}>
           <LogOut className="h-4 w-4" /> Sign out

@@ -30,7 +30,7 @@ function assertAnswerValue(ans, reqDef) {
   }
 
   const needUrl = (hostRx, msg) => {
-    if (!URL_RX.test(value) && !value.startsWith('/uploads/')) throw ApiError.badRequest(msg, 'INVALID_URL');
+    if (!URL_RX.test(value)) throw ApiError.badRequest(msg, 'INVALID_URL');
     if (hostRx && URL_RX.test(value)) {
       let host = '';
       try { host = new URL(value).hostname.replace(/^www\./, ''); } catch { /* handled above */ }
@@ -242,7 +242,12 @@ const listSubmissions = asyncHandler(async (req, res) => {
       .lean(),
   ]);
 
-  return ok(res, { items, total, page, pages: Math.ceil(total / limit) || 1 });
+  return ok(res, {
+    items: items.map((item) => ({ ...item, id: item._id })),
+    total,
+    page,
+    pages: Math.ceil(total / limit) || 1,
+  });
 });
 
 /** GET /api/submissions/:id — admin or the owning member */

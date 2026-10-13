@@ -69,7 +69,7 @@ function validatePostBody(body, { partial = false } = {}) {
   if (body.images) {
     if (body.images.length > 6) throw ApiError.badRequest('At most 6 images');
     for (const img of body.images) {
-      if (!String(img).startsWith('/uploads/') && !String(img).startsWith('http')) {
+      if (!String(img).startsWith('http')) {
         throw ApiError.badRequest('Images must be uploaded files or URLs');
       }
     }
@@ -276,12 +276,16 @@ const deleteComment = asyncHandler(async (req, res) => {
   return ok(res, { message: 'Comment deleted' });
 });
 
-/** DELETE /api/community/:id — admin removes a post (soft delete) */
+/** DELETE /api/community/:id — author or admin removes a post for everyone */
 const removePost = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid post id');
   const reason = String((req.body || {}).reason || '').slice(0, 500);
   const post = await Post.findById(req.params.id);
   if (!post) throw ApiError.notFound('Post not found');
+  const isOwner = String(post.author) === String(req.user._id);
+  if (!isOwner && req.user.role !== 'admin') {
+    throw ApiError.forbidden('You can only delete your own posts', 'DELETE_FORBIDDEN');
+  }
   post.status = 'removed';
   post.removedBy = req.user._id;
   post.removedReason = reason;

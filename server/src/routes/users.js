@@ -7,9 +7,12 @@ const Submission = require('../models/Submission');
 const EventRegistration = require('../models/Event').EventRegistration;
 const { SubmissionReview } = require('../models/Submission');
 const { requireAuth, requireApproved } = require('../middleware/auth');
-const { upload } = require('../middleware/upload');
+const env = require('../config/env');
+const { imageUpload } = require('../middleware/upload');
+const { uploadImage } = require('../services/cloudinary.service');
 const { validate, required, minLength, maxLength, email, pattern, isUrl } = require('../utils/validate');
 const { ApiError, asyncHandler, ok } = require('../utils/errors');
+const { eventStartAt } = require('../controllers/event.controller');
 
 // Every route here needs an authenticated, approved member.
 router.use(requireAuth, requireApproved);
@@ -60,6 +63,7 @@ router.get(
   '/dashboard',
   asyncHandler(async (req, res) => {
     const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const Challenge = require('../models/Challenge');
     const Event = require('../models/Event');
     const EventRegistration = require('../models/Event').EventRegistration;
@@ -86,7 +90,10 @@ router.get(
     ] = await Promise.all([
       User.countDocuments({ status: 'approved' }),
       Challenge.countDocuments({ status: 'published', startAt: { $lte: now }, deadline: { $gte: now } }),
-      Event.countDocuments({ status: 'published', date: { $gte: now } }),
+      Event.find({ status: 'published', date: { $gte: today } })
+        .select('date startTime')
+        .lean()
+        .then((events) => events.filter((event) => eventStartAt(event) > now).length),
       Promise.resolve(req.user.completedChallenges),
       leaderboard({ period: 'all', limit: 5, forUserId: req.user._id }),
       Challenge.find({ status: 'published', deadline: { $gte: now } })
@@ -94,10 +101,9 @@ router.get(
         .sort({ deadline: 1 })
         .limit(5)
         .lean(),
-      Event.find({ status: 'published', date: { $gte: now } })
+      Event.find({ status: 'published', date: { $gte: today } })
         .select('title date startTime endTime platform category isPrivate')
         .sort({ date: 1 })
-        .limit(4)
         .lean(),
       Challenge.find({ status: 'published' })
         .select('title description category difficulty maxPoints deadline coverImage')
@@ -131,7 +137,7 @@ router.get(
         myRank: myRank.me ? myRank.me.rank : null,
       },
       upcomingDeadlines,
-      upcomingEventsList: upcomingEventList,
+      upcomingEventsList: upcomingEventList.filter((event) => eventStartAt(event) > now).slice(0, 4),
       recentChallenges,
       recentActivity: recentActivity.map((p) => ({
         id: p._id, title: p.title, body: p.body.slice(0, 160), author: p.author,
@@ -277,10 +283,10 @@ router.patch(
 /** POST /api/users/me/photo — upload a profile photo (multipart, field: photo). */
 router.post(
   '/me/photo',
-  upload.single('photo'),
+  imageUpload.single('photo'),
   asyncHandler(async (req, res) => {
     if (!req.file) throw ApiError.badRequest('No image received (field name must be "photo")');
-    const photoUrl = `/uploads/${req.file.filename}`;
+    const photoUrl = await uploadImage(req.file.buffer, 'growth-circle/avatars');
     await User.updateOne({ _id: req.user._id }, { $set: { photoUrl } });
     return ok(res, { photoUrl });
   })

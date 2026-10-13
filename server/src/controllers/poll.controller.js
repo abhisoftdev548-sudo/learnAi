@@ -10,6 +10,7 @@ function validatePollBody(body, { partial = false } = {}) {
   validate(body, {
     question: partial ? [minLength(3), maxLength(300)] : [required('Question is required'), minLength(3), maxLength(300)],
     description: [maxLength(1000)],
+    image: [custom((v) => (v === undefined || /^https?:\/\//.test(String(v)) ? null : 'image must be a Cloudinary URL or another valid URL'))],
     startsAt: partial ? [isDate()] : [required('Start time is required'), isDate()],
     endsAt: partial ? [isDate()] : [required('End time is required'), isDate()],
     options: [isArray('options must be a list')],
@@ -98,6 +99,7 @@ function serializePoll(poll, { mine = null, isAdmin = false, results = null, liv
     id: poll._id,
     question: poll.question,
     description: poll.description,
+    image: poll.image,
     options: poll.options.map((o) => ({ id: o._id, text: o.text })),
     startsAt: poll.startsAt.toISOString(),
     endsAt: poll.endsAt.toISOString(),
@@ -178,6 +180,7 @@ const createPoll = asyncHandler(async (req, res) => {
   const poll = await Poll.create({
     question: b.question.trim(),
     description: b.description || '',
+    image: b.image || '',
     options: b.options.map((o) => ({ text: String(typeof o === 'string' ? o : o.text).trim() })),
     startsAt: new Date(b.startsAt),
     endsAt: new Date(b.endsAt),
@@ -208,6 +211,7 @@ const updatePoll = asyncHandler(async (req, res) => {
 
   if (body.question !== undefined) poll.question = String(body.question).trim();
   if (body.description !== undefined) poll.description = body.description;
+  if (body.image !== undefined) poll.image = body.image;
   if (body.startsAt !== undefined) poll.startsAt = new Date(body.startsAt);
   if (body.endsAt !== undefined) poll.endsAt = new Date(body.endsAt);
   if (body.anonymous !== undefined) poll.anonymous = !!body.anonymous;

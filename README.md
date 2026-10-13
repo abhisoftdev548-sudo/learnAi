@@ -84,7 +84,7 @@ New member registrations start as **`pending`** and can only log in after an adm
 # terminal 1 — API on http://localhost:5000
 cd server && npm run dev
 
-# terminal 2 — Vite dev server on http://localhost:5173 (proxies /api and /uploads)
+# terminal 2 — Vite dev server on http://localhost:5173 (proxies /api)
 cd client && npm run dev
 ```
 
@@ -95,7 +95,7 @@ cd client && npm run build     # emits client/dist
 cd ../server && NODE_ENV=production npm start
 ```
 
-Express serves the built SPA (`client/dist`) with history fallback, plus `/api/*` and `/uploads/*` — everything on `http://localhost:5000`.
+Express serves the built SPA (`client/dist`) with history fallback and `/api/*` on `http://localhost:5000`. All images are stored on Cloudinary.
 
 ## Environment variables
 
@@ -108,6 +108,7 @@ Express serves the built SPA (`client/dist`) with history fallback, plus `/api/*
 | `COOKIE_MAX_AGE_MS` | 7 days | Auth cookie lifetime |
 | `CLIENT_URL` / `CORS_ORIGINS` | *(empty)* | Comma-separated allowed origins (credentials CORS) |
 | `MAX_UPLOAD_MB` | `2` | Photo/avatar upload cap |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | *(required)* | Cloudinary credentials for image uploads |
 | `ADMIN_EMAIL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_NAME` | see above | Initial admin seeding |
 
 ## Project structure
@@ -132,7 +133,6 @@ server/
   src/services/         Leaderboard computation
   scripts/              Engine launcher, glibc patcher, shim source, seed
   tests/                Automated critical-flow tests (Jest + Supertest)
-  uploads/              Uploaded files (served at /uploads)
 ```
 
 ## Screens
@@ -171,7 +171,8 @@ Auth: HttpOnly cookie `tf_token` (SameSite=Lax). Mutating requests must come fro
 | Method | Path | Who | Description |
 |---|---|---|---|
 | GET | `/` | approved | Filters `q`, `category`, `difficulty`, `status`, `page`; includes `memberStatus`/time state |
-| POST | `/` · PATCH `/:id` · DELETE `/:id` | admin | CRUD incl. `requirements[]` (configurable required submission types), `allowLateSubmissions`, `allowResubmission`, `communityVisibility`, publish/archive |
+| POST | `/` · PATCH `/:id` | admin | CRUD incl. `requirements[]` (configurable required submission types), `allowLateSubmissions`, `allowResubmission`, `communityVisibility`, publish/archive |
+| DELETE | `/:id` | creator/admin | Delete the challenge for everyone (blocked when submissions exist) |
 | GET | `/:id` | approved | Detail + my submission state |
 | GET | `/:id/participation` | admin | Per-challenge member-by-member report (computed from DB) |
 
@@ -180,7 +181,7 @@ Auth: HttpOnly cookie `tf_token` (SameSite=Lax). Mutating requests must come fro
 |---|---|---|---|
 | POST | `/challenges/:challengeId` | approved | Submit answers for every required field; validates types/URL hosts, deadline, duplicates (`DUPLICATE_SUBMISSION`), resubmission policy |
 | GET | `/challenges/:challengeId/mine` · `GET /:id` | owner/admin | My submission + history |
-| POST | `/upload` | approved | Upload answer file (images/pdf/zip/docx/txt, 8 MB) → `/uploads/…` |
+| POST | `/upload` | approved | Upload an image answer (≤ 2 MB) → Cloudinary URL |
 | POST | `/:id/review` | admin | `{points (0..max), status: approved\|needs_changes\|rejected, feedback}` — recomputes member score exactly once per latest review |
 | GET | `/` | admin | Review queue: `status`, `challenge`, `q` filters |
 
@@ -188,7 +189,8 @@ Auth: HttpOnly cookie `tf_token` (SameSite=Lax). Mutating requests must come fro
 | Method | Path | Who | Description |
 |---|---|---|---|
 | GET | `/` · GET `/:id` | approved | `meetingUrl` only visible to registered/attending members |
-| POST · PATCH · DELETE | `/:id` | admin | CRUD, statuses draft/published/completed/cancelled, registration deadline |
+| POST · PATCH | `/:id` | admin | Create/update events, statuses draft/published/completed/cancelled, registration deadline |
+| DELETE | `/:id` | creator/admin | Delete the event for everyone |
 | POST | `/:id/register` / `/unregister` | approved | `ALREADY_REGISTERED`, `REGISTRATION_CLOSED`, `EVENT_PAST` |
 | POST | `/:id/attendance` | admin | Mark attendance per member |
 
@@ -204,10 +206,17 @@ Auth: HttpOnly cookie `tf_token` (SameSite=Lax). Mutating requests must come fro
 | Method | Path | Who | Description |
 |---|---|---|---|
 | GET | `/` | approved | Paginated feed; approved submissions appear per challenge `communityVisibility` |
-| POST | `/posts` · DELETE `/posts/:id` | approved | Author or admin can delete |
+| POST | `/` · DELETE `/:id` | approved | Create a post; author or admin can delete it for everyone |
 | POST | `/posts/:id/comments` · DELETE `/comments/:id` | approved | Comments (paginated on post detail) |
 | POST | `/posts/:id/like` | approved | Toggle like |
 | POST | `/posts/:id/report` · GET `/reports` · PATCH `/reports/:id` | approved / admin | Moderation (resolve/dismiss/remove content) |
+
+### Group chat — `/api/chat`
+| Method | Path | Who | Description |
+|---|---|---|---|
+| GET | `/messages` | approved | List recent group messages |
+| POST | `/messages` | approved | Send a group message |
+| DELETE | `/messages/:id` | author/admin | Delete the message for everyone |
 
 ### Notifications — `/api/notifications`
 | Method | Path | Who | Description |
@@ -278,7 +287,7 @@ The suite reuses the running dev server's engine when available (`server/.data/m
 | 16 | Approved submission with community visibility `auto` | Appears in feed; unlike/comment/report work; report shows in Admin → Moderation |
 | 17 | Notifications | Approval, publish, review & event actions create notifications; badge count + mark-read work |
 | 18 | PATCH `/api/users/me` with `{"role":"admin","points":9999}` via curl | Response keeps `member` role and unchanged points |
-| 19 | Profile photos / submission file upload | Wrong type >2 MB rejected; valid file served from `/uploads` |
+| 19 | Image uploads | Non-image files and files >2 MB are rejected; images are stored on Cloudinary |
 | 20 | Participation report | Counts equal the member-by-member rows; percentage matches submissions |
 
 ## Security notes

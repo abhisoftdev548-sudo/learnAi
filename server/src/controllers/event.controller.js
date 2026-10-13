@@ -10,6 +10,14 @@ const { EVENT_CATEGORIES } = require('../models/Event');
 
 const TIME_RX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+function eventStartAt(event) {
+  const date = new Date(event.date);
+  const [hours, minutes] = String(event.startTime || '00:00').split(':').map(Number);
+  // The date input is stored at UTC midnight; use its calendar date and the
+  // separately stored start time for the event's actual start instant.
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), hours, minutes));
+}
+
 function validateEventBody(body, { partial = false } = {}) {
   validate(body, {
     title: partial ? [minLength(3), maxLength(140)] : [required('Title is required'), minLength(3), maxLength(140)],
@@ -21,7 +29,11 @@ function validateEventBody(body, { partial = false } = {}) {
     endTime: [custom((v) => (v === undefined || TIME_RX.test(String(v)) ? null : 'End time must be HH:MM'))],
     registrationDeadline: [isDate()],
     meetingUrl: [isUrl('Meeting URL must be a valid http(s) URL')],
-    coverImage: [isUrl('Cover image must be a valid URL')],
+    coverImage: [custom((v) => (
+      v === undefined || v === '' || /^https?:\/\//.test(String(v))
+        ? null
+        : 'Cover image must be a valid URL'
+    ))],
     status: [oneOf(['draft', 'published', 'cancelled', 'completed'])],
     isPrivate: [custom((v) => (v === undefined || typeof v === 'boolean' ? null : 'must be true or false'))],
   });
@@ -33,7 +45,7 @@ function validateEventBody(body, { partial = false } = {}) {
 function serializeEvent(e, { isAdmin = false, registered = false, attending = false } = {}) {
   const now = new Date();
   const eventDate = new Date(e.date);
-  const past = e.status === 'completed' || (eventDate.toDateString() < now.toDateString());
+  const past = e.status === 'completed' || eventStartAt(e) <= now;
   return {
     id: e._id,
     title: e.title,
@@ -72,21 +84,20 @@ const listEvents = asyncHandler(async (req, res) => {
   }
   if (req.query.status && isAdmin) filter.status = String(req.query.status);
   if (req.query.category) filter.category = String(req.query.category);
-  if (req.query.upcoming === '1') filter.date = { $gte: now };
-  if (req.query.past === '1') filter.date = { $lt: now };
-
   const page = Math.max(1, parseInt(req.query.page || '1', 10) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit || '12', 10) || 12));
 
-  const [total, events] = await Promise.all([
-    Event.countDocuments(filter),
-    Event.find(filter)
-      .populate('createdBy', 'name username')
-      .sort({ date: req.query.past === '1' ? -1 : 1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
-  ]);
+  const allEvents = await Event.find(filter)
+    .populate('createdBy', 'name username')
+    .sort({ date: req.query.past === '1' ? -1 : 1 })
+    .lean();
+  const filteredEvents = req.query.upcoming === '1'
+    ? allEvents.filter((event) => eventStartAt(event) > now)
+    : req.query.past === '1'
+      ? allEvents.filter((event) => eventStartAt(event) <= now || event.status === 'completed')
+      : allEvents;
+  const total = filteredEvents.length;
+  const events = filteredEvents.slice((page - 1) * limit, page * limit);
 
   const ids = events.map((e) => e._id);
   const [regs, counts] = await Promise.all([
@@ -217,6 +228,10 @@ const deleteEvent = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid event id');
   const event = await Event.findById(req.params.id);
   if (!event) throw ApiError.notFound('Event not found');
+  const isOwner = String(event.createdBy) === String(req.user._id);
+  if (!isOwner && req.user.role !== 'admin') {
+    throw ApiError.forbidden('Only the event creator or an admin can delete this event', 'DELETE_FORBIDDEN');
+  }
   await EventRegistration.deleteMany({ event: event._id });
   await event.deleteOne();
   return ok(res, { message: 'Event deleted' });
@@ -295,6 +310,7 @@ const setAttendance = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  eventStartAt,
   listEvents,
   getEvent,
   createEvent,

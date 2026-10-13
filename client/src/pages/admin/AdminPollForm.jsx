@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save, Rocket, Plus, X } from 'lucide-react';
-import api, { apiError } from '../../services/api';
+import api, { apiError, uploadImages } from '../../services/api';
 import { PageLoader, Spinner } from '../../components/Spinner';
 import { Field, Input, Textarea, SubmitButton } from '../../components/Form';
 import AdminNav from './AdminNav';
@@ -23,6 +23,8 @@ export default function AdminPollForm() {
   const [loading, setLoading] = useState(editing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [image, setImage] = useState('');
 
   const empty = {
     question: '', description: '', options: ['', ''],
@@ -37,9 +39,11 @@ export default function AdminPollForm() {
     api.get(`/polls/${id}`)
       .then((r) => {
         const p = r.data.data.poll;
+        setImage(p.image || '');
         setForm({
           question: p.question, description: p.description || '',
           options: p.options.map((o) => o.text),
+          image: p.image || '',
           startsAt: toLocalInput(p.startsAt), endsAt: toLocalInput(p.endsAt),
           anonymous: p.anonymous, allowMultiple: p.allowMultiple, allowChangeVote: p.allowChangeVote,
           visibility: p.visibility, resultsVisibility: p.resultsVisibility,
@@ -69,6 +73,7 @@ export default function AdminPollForm() {
     try {
       const payload = {
         ...form,
+        image: imageFile ? (await uploadImages([imageFile]))[0] : image,
         options: form.options.map((o) => ({ text: o.trim() })).filter((o) => o.text),
         ...(nextStatus ? { status: nextStatus } : {}),
       };
@@ -111,6 +116,10 @@ export default function AdminPollForm() {
 
         <Field label="Description" hint="Optional context">
           <Textarea rows={2} value={form.description} onChange={set('description')} maxLength={1000} />
+        </Field>
+        <Field label="Image" hint="Optional PNG, JPG, WEBP or GIF up to 2MB">
+          <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
+          {image && <img src={image} alt="Poll preview" className="mt-2 h-28 rounded-lg object-cover" />}
         </Field>
 
         <div>
