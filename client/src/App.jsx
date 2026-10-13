@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { AdminRoute, ProtectedRoute } from './components/layout/Routes.jsx';
+import { ErrorBoundary } from './components/ui/ErrorBoundary.jsx';
 
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
@@ -27,39 +28,40 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
+        <ErrorBoundary>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
 
-          {/* Members */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/challenges" element={<Challenges />} />
-            <Route path="/challenges/:slug" element={<Workspace />} />
-            <Route path="/submissions/:id" element={<SubmissionDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
+            {/* Members */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/challenges" element={<Challenges />} />
+              <Route path="/challenges/:slug" element={<Workspace />} />
+              <Route path="/submissions/:id" element={<SubmissionDetail />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
 
-          {/* Admins */}
-          <Route path="/admin" element={<AdminRoute />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="challenges" element={<ManageChallenges />} />
-            <Route path="users" element={<ManageUsers />} />
-            <Route path="submissions" element={<AdminSubmissions />} />
-            <Route path="statistics" element={<Statistics />} />
-          </Route>
+            {/* Admins */}
+            <Route path="/admin" element={<AdminRoute />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="challenges" element={<ManageChallenges />} />
+              <Route path="users" element={<ManageUsers />} />
+              <Route path="submissions" element={<AdminSubmissions />} />
+              <Route path="statistics" element={<Statistics />} />
+            </Route>
 
-          {/* Legacy/alias routes */}
-          <Route path="/challenge" element={<Navigate to="/challenges" replace />} />
-          <Route path="/history/submissions" element={<Navigate to="/history" replace />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Aliases */}
+            <Route path="/challenge" element={<Navigate to="/challenges" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </ToastProvider>
     </AuthProvider>
   );
