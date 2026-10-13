@@ -32,7 +32,6 @@ let app;
 let connectDB;
 let closeDB;
 let User;
-let sharedMode = false;
 
 /** Remove this suite's fixture data (before AND after each run). */
 async function wipeFixtures() {
@@ -100,8 +99,6 @@ beforeAll(async () => {
   app = require('../src/app');
   User = require('../src/models/User');
   const fs = require('node:fs');
-  const mongoose = require('mongoose');
-  const uriFile = path.join(__dirname, '..', '.data', 'mongo.uri');
 
   // Best-effort cleanup of data dirs left behind by earlier crashed runs
   // (runs BEFORE this process starts only — never touch live socket dirs).
@@ -114,22 +111,7 @@ beforeAll(async () => {
     }
   } catch (_) { /* ignore */ }
 
-  // Reuse the dev server's embedded engine when it is running (two concurrent
-  // embedded engines race in the native layer and can segfault).
-  let shared = false;
-  if (!process.env.MONGODB_URI && fs.existsSync(uriFile)) {
-    const uri = fs.readFileSync(uriFile, 'utf8').trim();
-    try {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
-      shared = true;
-      sharedMode = true;
-      console.log('[test] reusing the running engine');
-    } catch (_) {
-      // stale URI file — fall back to opening our own engine
-      try { fs.unlinkSync(uriFile); } catch (_) { /* ignore */ }
-    }
-  }
-  if (!shared) await connectDB();
+  await connectDB(); // reuses the dev server's live engine when it is running
 
   await wipeFixtures(); // start from a clean slate (shared dev DB may be dirty)
   await User.init();
@@ -138,10 +120,10 @@ beforeAll(async () => {
 afterAll(async () => {
   // Leave the shared dev DB as clean as we found it (fixtures only).
   try { await wipeFixtures(); } catch (_) { /* ignore */ }
-  // Own engine: close it (engine.close is safe; mongoose.disconnect would
-  // segfault the embedded engine via endSessions). Shared mode: leave the dev
-  // server's engine strictly alone — forceExit cleans up our client sockets.
-  if (!sharedMode) await closeDB();
+  // closeDB is safe: it closes our own engine, no-ops against the dev
+  // server's reused engine (mongoose.disconnect would segfault it via
+  // endSessions), and disconnects normally against external MongoDB.
+  await closeDB();
 });
 
 describe('1-3. Registration, pending gate, approval', () => {

@@ -73,7 +73,7 @@ export default function Members() {
         <>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {data.users.map((m) => (
-              <Link key={m.id} to={`/members/${m.username}`} className="card group flex h-full flex-col items-center p-5 text-center transition hover:-translate-y-0.5 hover:shadow-pop">
+              <Link key={m._id} to={`/members/${m.username}`} className="card group flex h-full flex-col items-center p-5 text-center transition hover:-translate-y-0.5 hover:shadow-pop">
                 <Avatar user={m} size="lg" />
                 <p className="mt-3 line-clamp-1 min-h-5 w-full font-semibold text-slate-900 group-hover:text-primary-600">{m.name}</p>
                 <p className="line-clamp-1 min-h-4 w-full text-xs text-slate-400">@{m.username}</p>

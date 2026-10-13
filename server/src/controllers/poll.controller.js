@@ -40,7 +40,8 @@ function validatePollBody(body, { partial = false } = {}) {
   }
 }
 
-/** Poll results — counts only; voter identities are never exposed to members. */
+/** Poll results — counts only; voter identities are exposed only for named
+ * (non-anonymous) polls — and always to admins. Anonymous polls never leak. */
 async function computeResults(poll, { includeVoters = false } = {}) {
   const match = { poll: poll._id };
   const votes = await Vote.find(match).lean();
@@ -138,7 +139,7 @@ const listPolls = asyncHandler(async (req, res) => {
     if (live === 'closed' && !isAdmin && p.status !== 'closed') {
       // fall through — still show recently closed polls
     }
-    const includeVoters = isAdmin;
+    const includeVoters = isAdmin || !p.anonymous; // named polls show who voted
     const status = live;
     const showResults =
       (p.resultsVisibility === 'immediate' && status !== 'draft') ||
@@ -169,7 +170,7 @@ const getPoll = asyncHandler(async (req, res) => {
     (p.resultsVisibility === 'immediate' && live !== 'draft') ||
     (p.resultsVisibility === 'after_close' && (live === 'closed' || live === 'archived')) ||
     isAdmin;
-  const results = showResults ? await computeResults(p, { includeVoters: isAdmin }) : null;
+  const results = showResults ? await computeResults(p, { includeVoters: isAdmin || !p.anonymous }) : null;
   return ok(res, { poll: serializePoll(p, { mine, isAdmin, results, liveStatus: live }) });
 });
 
@@ -332,7 +333,9 @@ const vote = asyncHandler(async (req, res) => {
     (poll.resultsVisibility === 'immediate' && liveStatus(poll, now) !== 'draft') ||
     (poll.resultsVisibility === 'after_close' && liveStatus(poll, now) === 'closed') ||
     req.user.role === 'admin';
-  const results = showResults ? await computeResults(poll, { includeVoters: req.user.role === 'admin' }) : null;
+  const results = showResults
+    ? await computeResults(poll, { includeVoters: req.user.role === 'admin' || !poll.anonymous })
+    : null;
 
   return ok(res, {
     voted: normalized,

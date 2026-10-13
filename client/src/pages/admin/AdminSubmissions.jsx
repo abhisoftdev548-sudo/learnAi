@@ -102,7 +102,7 @@ export default function AdminSubmissions() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.map((s) => (
-                  <tr key={s.id} className="transition hover:bg-slate-50/70">
+                  <tr key={s._id} className="transition hover:bg-slate-50/70">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar user={s.member} size="sm" />
@@ -126,7 +126,7 @@ export default function AdminSubmissions() {
                     <td className="px-5 py-3"><StatusBadge status={s.status} /></td>
                     <td className="px-5 py-3 text-right font-bold text-slate-800">{s.score ?? '—'}</td>
                     <td className="px-5 py-3 text-right">
-                      <Link to={`/admin/submissions/${s.id}`} className="btn-primary !px-3 !py-1.5 !text-xs">
+                      <Link to={`/admin/submissions/${s._id}`} className="btn-primary !px-3 !py-1.5 !text-xs">
                         Review <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
                     </td>
