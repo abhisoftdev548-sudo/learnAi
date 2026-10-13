@@ -254,7 +254,7 @@ cd server && npm test
 
 Extras: duplicate registration, auto-publish to community feed, participation-report consistency.
 
-The suite reuses the running dev server's engine when available (`server/.data/mongo.uri`) and otherwise opens its own temporary engine — either way it is safe to run while the app is up.
+The suite opens its own temporary engine (data under the OS tmp dir) and cleans its fixtures before and after every run — it is safe to run while the dev server is up. Sibling processes that target the **same** data directory (e.g. `npm run seed:admin` while `npm run dev` is running) automatically attach to the live engine via the published `server/.data/mongo.uri` instead of opening a second one.
 
 ### Manual test checklist
 
