@@ -16,7 +16,7 @@ function setAuthCookie(res, token) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: env.isProd,
-    sameSite: 'lax',
+    sameSite: env.cookieSameSite,
     path: '/',
     maxAge: env.cookieMaxAgeMs,
   });
@@ -26,7 +26,7 @@ function clearAuthCookie(res) {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
     secure: env.isProd,
-    sameSite: 'lax',
+    sameSite: env.cookieSameSite,
     path: '/',
   });
 }

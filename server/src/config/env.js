@@ -15,6 +15,7 @@ const env = {
   jwtSecret: process.env.JWT_SECRET || '',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   cookieMaxAgeMs: parseInt(process.env.COOKIE_MAX_AGE_MS || String(7 * 24 * 60 * 60 * 1000), 10),
+  cookieSameSite: (process.env.COOKIE_SAME_SITE || 'lax').toLowerCase(),
   clientUrls: (process.env.CLIENT_URL || '')
     .split(',')
     .map((s) => s.trim())
@@ -30,6 +31,14 @@ const env = {
 };
 
 env.allowedOrigins = [...new Set([...env.clientUrls, ...env.corsOrigins])];
+
+if (!['lax', 'strict', 'none'].includes(env.cookieSameSite)) {
+  console.error('[env] COOKIE_SAME_SITE must be lax, strict, or none.');
+  process.exit(1);
+}
+if (env.cookieSameSite === 'none' && !env.isProd) {
+  console.warn('[env] COOKIE_SAME_SITE=none requires HTTPS in browsers.');
+}
 
 if (!env.isProd) {
   if (!env.jwtSecret) {

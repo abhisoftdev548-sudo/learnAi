@@ -106,6 +106,7 @@ Express serves the built SPA (`client/dist`) with history fallback and `/api/*` 
 | `JWT_SECRET` | dev default (**required ≥ 32 chars in production**) | Signs auth cookies |
 | `JWT_EXPIRES_IN` | `7d` | Session lifetime |
 | `COOKIE_MAX_AGE_MS` | 7 days | Auth cookie lifetime |
+| `COOKIE_SAME_SITE` | `lax` | Cookie policy; set to `none` for separate HTTPS frontend/backend domains |
 | `CLIENT_URL` / `CORS_ORIGINS` | *(empty)* | Comma-separated allowed origins (credentials CORS) |
 | `MAX_UPLOAD_MB` | `2` | Photo/avatar upload cap |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | *(required)* | Cloudinary credentials for image uploads |
