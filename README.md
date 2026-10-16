@@ -333,6 +333,18 @@ After saving the rewrite, trigger a new deploy and verify a direct refresh of `/
 `/community`, and `/admin` before testing authentication. The rewrite must be configured on the
 frontend Static Site; adding it to the backend Web Service does not affect frontend routes.
 
+The frontend also publishes `client/public/_redirects` with the same SPA fallback for static
+hosts that support `_redirects` files. Render Dashboard rewrites remain the authoritative setting
+for an existing Render Static Site, so configure the Dashboard rule and redeploy after adding or
+changing this file.
+
+For a Vercel deployment from the repository root, [`vercel.json`](./vercel.json) configures the
+client build output and rewrites every client route to `index.html` without changing the browser
+URL. If the Vercel project uses `client` as its **Root Directory**, use the
+[`client/vercel.json`](./client/vercel.json) configuration instead; it is included for that
+deployment mode. Set `VITE_API_URL` in the Vercel project environment variables to the deployed
+backend API, for example `https://api.example.com/api`, and redeploy after changing it.
+
 ## How points & the leaderboard work
 
 - Every admin review stores a `SubmissionReview` row (member, submission, points, status, reviewer, feedback); only the **latest** review per submission counts (`isLatest`).
