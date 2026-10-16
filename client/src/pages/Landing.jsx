@@ -106,19 +106,39 @@ export default function Landing() {
       {/* CTA band */}
       <section className="bg-slate-900">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-14 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to join the team?</h2>
-          <p className="max-w-xl text-slate-400">
-            Create your account — an administrator reviews every registration to keep this space private and focused.
-          </p>
-          <Link to="/register" className="btn bg-white !px-6 !py-3 !text-base text-slate-900 hover:bg-slate-100">
-            Create your account <ArrowRight className="h-5 w-5" />
-          </Link>
+          {authStatus === 'in' ? (
+            <>
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">Keep growing with your team.</h2>
+              <p className="max-w-xl text-slate-400">Open your dashboard to continue learning, practicing and sharing progress.</p>
+              <Link to={isAdmin ? '/admin' : '/dashboard'} className="btn bg-white !px-6 !py-3 !text-base text-slate-900 hover:bg-slate-100">
+                Open dashboard <ArrowRight className="h-5 w-5" />
+              </Link>
+            </>
+          ) : authStatus === 'pending' || authStatus === 'rejected' || authStatus === 'suspended' ? (
+            <>
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">Check your account status.</h2>
+              <p className="max-w-xl text-slate-400">Your registration status and next steps are available here.</p>
+              <Link to="/pending" className="btn bg-white !px-6 !py-3 !text-base text-slate-900 hover:bg-slate-100">
+                View account status <ArrowRight className="h-5 w-5" />
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to join the team?</h2>
+              <p className="max-w-xl text-slate-400">Request access — an administrator reviews every registration to keep this space private and focused.</p>
+              <Link to="/register" className="btn bg-white !px-6 !py-3 !text-base text-slate-900 hover:bg-slate-100">
+                Request access <ArrowRight className="h-5 w-5" />
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-slate-400 sm:flex-row sm:px-6 lg:px-8">
-        <p>© {new Date().getFullYear()} Growth Circle — team learning &amp; practice platform.</p>
-        <p>Built with React, Express &amp; MongoDB.</p>
+      <footer className="border-t border-slate-100 bg-slate-50">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-center text-xs text-slate-500 sm:flex-row sm:px-6 sm:text-left lg:px-8">
+          <p>© {new Date().getFullYear()} Growth Circle</p>
+          <p>Team learning &amp; practice platform · Built with React, Express &amp; MongoDB</p>
+        </div>
       </footer>
     </div>
   );
