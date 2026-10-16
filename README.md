@@ -110,6 +110,7 @@ Express serves the built SPA (`client/dist`) with history fallback and `/api/*` 
 | `MAX_UPLOAD_MB` | `2` | Photo/avatar upload cap |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | *(required)* | Cloudinary credentials for image uploads |
 | `ADMIN_EMAIL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_NAME` | see above | Initial admin seeding |
+| `VITE_API_URL` | *(unset)* | Client build variable for a separate backend, e.g. `https://api.example.com/api`; leave unset for same-origin deployment |
 
 ## Project structure
 

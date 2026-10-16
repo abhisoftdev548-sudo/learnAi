@@ -7,7 +7,7 @@ import axios from 'axios';
  * - cookies are HttpOnly; `withCredentials` keeps them attached
  */
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
   timeout: 30000,
 });
