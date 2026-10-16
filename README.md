@@ -311,6 +311,28 @@ The suite opens its own temporary engine (data under the OS tmp dir) and cleans 
 4. Seed the first admin: `npm run seed:admin`
 5. Put TLS in front (Caddy/Nginx/ingress); cookies are already `Secure`-ready in production
 
+### Render static-site deployment
+
+The repository includes [`render.yaml`](./render.yaml) for a Render Blueprint deployment. If the
+static site was created manually in the Render Dashboard, add this rule under **Redirects/Rewrites**
+because an existing service does not automatically apply a newly added `render.yaml`:
+
+| Source | Destination | Action |
+|---|---|---|
+| `/*` | `/index.html` | Rewrite |
+
+Use `client` as the service root directory when configuring the site manually, or use the
+repository-root build settings from `render.yaml`:
+
+```text
+Build command: cd client && npm ci && npm run build
+Publish directory: client/dist
+```
+
+After saving the rewrite, trigger a new deploy and verify a direct refresh of `/dashboard`,
+`/community`, and `/admin` before testing authentication. The rewrite must be configured on the
+frontend Static Site; adding it to the backend Web Service does not affect frontend routes.
+
 ## How points & the leaderboard work
 
 - Every admin review stores a `SubmissionReview` row (member, submission, points, status, reviewer, feedback); only the **latest** review per submission counts (`isLatest`).
