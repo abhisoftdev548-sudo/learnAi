@@ -195,6 +195,7 @@ Auth: HttpOnly cookie `tf_token` (SameSite=Lax). Mutating requests must come fro
 | DELETE | `/:id` | creator/admin | Delete the event for everyone |
 | POST | `/:id/register` / `/unregister` | approved | `ALREADY_REGISTERED`, `REGISTRATION_CLOSED`, `EVENT_PAST` |
 | POST | `/:id/attendance` | admin | Mark attendance per member |
+| POST | `/:id/rewards` | admin | Award/update points and feedback for a registered member |
 
 ### Polls — `/api/polls`
 | Method | Path | Who | Description |
@@ -204,14 +205,22 @@ Auth: HttpOnly cookie `tf_token` (SameSite=Lax). Mutating requests must come fro
 | POST | `/:id/vote` | approved | One vote per member unless `allowMultiple`; `ALREADY_VOTED`, `SINGLE_CHOICE_ONLY`, `POLL_CLOSED` |
 | POST | `/:id/status` | admin | open/close/archive |
 
+Polls can optionally define `rewardPoints`; the first successful vote awards those points
+automatically once per member. Changing a vote does not create duplicate points.
+
 ### Community — `/api/community`
 | Method | Path | Who | Description |
 |---|---|---|---|
 | GET | `/` | approved | Paginated feed; approved submissions appear per challenge `communityVisibility` |
 | POST | `/` · DELETE `/:id` | approved | Create a post; author or admin can delete it for everyone |
-| POST | `/posts/:id/comments` · DELETE `/comments/:id` | approved | Comments (paginated on post detail) |
-| POST | `/posts/:id/like` | approved | Toggle like |
-| POST | `/posts/:id/report` · GET `/reports` · PATCH `/reports/:id` | approved / admin | Moderation (resolve/dismiss/remove content) |
+| GET | `/:id` · GET `/:id/comments` | approved | Post detail and comments (paginated on post detail) |
+| POST | `/:id/comments` · DELETE `/comments/:id` | approved | Add/remove comments |
+| POST · DELETE | `/:id/like` | approved | Toggle like on/off |
+| GET | `/:id/likes` | approved | List members who liked the post |
+| POST | `/:id/report` · GET `/reports` · PATCH `/reports/:id` | approved / admin | Moderation (resolve/dismiss/remove content) |
+
+Events can optionally define `rewardPoints` as the suggested award amount. Admins award or update
+the final points and review text for registered members through `/:id/rewards`.
 
 ### Group chat — `/api/chat`
 | Method | Path | Who | Description |

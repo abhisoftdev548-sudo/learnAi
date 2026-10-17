@@ -6,6 +6,7 @@ import StatusBadge from '../components/StatusBadge';
 import { PageLoader } from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import Pagination from '../components/Pagination';
+import ImageLightbox from '../components/ImageLightbox';
 import { Field, Input, Select } from '../components/Form';
 import {
   formatDate, remainingTime, truncate, CATEGORY_LABELS, DIFFICULTY_LABELS, statusLabel,
@@ -31,6 +32,7 @@ export default function Challenges() {
   const [deadline, setDeadline] = useState('');
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
+  const [previewImage, setPreviewImage] = useState('');
 
   const params = useMemo(() => {
     const p = new URLSearchParams({ page: String(page), limit: '12' });
@@ -108,7 +110,17 @@ export default function Challenges() {
                   className="card group flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-pop"
                 >
                   {c.coverImage && (
-                    <img src={c.coverImage} alt="" className="mb-4 aspect-video w-full rounded-xl object-cover" loading="lazy" referrerPolicy="no-referrer" />
+                    <img
+                      src={c.coverImage}
+                      alt=""
+                      className="mb-4 aspect-video w-full cursor-zoom-in rounded-xl object-cover"
+                      loading="lazy"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setPreviewImage(c.coverImage);
+                      }}
+                    />
                   )}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-wrap gap-1.5">
@@ -151,6 +163,7 @@ export default function Challenges() {
           <Pagination page={data.page} pages={data.pages} total={data.total} onChange={setPage} />
         </>
       )}
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </div>
   );
 }

@@ -32,6 +32,7 @@ const eventSchema = new mongoose.Schema(
     isPrivate: { type: Boolean, default: false },
 
     registrationDeadline: { type: Date, default: null },
+    rewardPoints: { type: Number, default: 0, min: 0, max: 10000 },
     status: {
       type: String,
       enum: ['draft', 'published', 'cancelled', 'completed'],

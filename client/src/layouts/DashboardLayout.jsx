@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Target, CalendarDays, MessagesSquare, BarChart3, Trophy,
-  Users, User, ShieldCheck, LogOut, Menu, X, Bell, Settings, Rocket,
+  Users, User, ShieldCheck, LogOut, Menu, X, Bell, Settings,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import api from '../services/api';
+import BrandLogo from '../components/BrandLogo';
 
 const NAV = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -96,13 +97,8 @@ export default function DashboardLayout({ children, admin = false }) {
   );
 
   const brand = (
-    <Link to="/dashboard" className="flex items-center gap-2.5 px-5 py-5">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 text-white shadow-sm">
-        <Rocket className="h-5 w-5" />
-      </span>
-      <span className="text-lg font-bold tracking-tight text-slate-900">
-        Growth Circle
-      </span>
+    <Link to="/dashboard" className="px-5 py-4">
+      <BrandLogo className="h-11 w-11" nameClassName="text-lg font-bold tracking-tight text-slate-900" />
     </Link>
   );
 

@@ -2,6 +2,8 @@
 const mongoose = require('mongoose');
 const Poll = require('../models/Poll');
 const Vote = require('../models/Poll').Vote;
+const Reward = require('../models/Reward');
+const { recalcUserScore } = require('../services/leaderboard.service');
 const { notifyAllApproved } = require('../models/notification.helper');
 const { ApiError, asyncHandler, ok } = require('../utils/errors');
 const { validate, required, minLength, maxLength, isDate, custom, isArray } = require('../utils/validate');
@@ -10,7 +12,11 @@ function validatePollBody(body, { partial = false } = {}) {
   validate(body, {
     question: partial ? [minLength(3), maxLength(300)] : [required('Question is required'), minLength(3), maxLength(300)],
     description: [maxLength(1000)],
-    image: [custom((v) => (v === undefined || /^https?:\/\//.test(String(v)) ? null : 'image must be a Cloudinary URL or another valid URL'))],
+    image: [custom((v) => (
+      v === undefined || v === '' || /^https?:\/\//.test(String(v))
+        ? null
+        : 'image must be a Cloudinary URL or another valid URL'
+    ))],
     startsAt: partial ? [isDate()] : [required('Start time is required'), isDate()],
     endsAt: partial ? [isDate()] : [required('End time is required'), isDate()],
     options: [isArray('options must be a list')],
@@ -19,6 +25,7 @@ function validatePollBody(body, { partial = false } = {}) {
     allowChangeVote: [custom((v) => (v === undefined || typeof v === 'boolean' ? null : 'must be true or false'))],
     visibility: [custom((v) => (v === undefined || ['team', 'admins'].includes(v) ? null : 'must be team or admins'))],
     resultsVisibility: [custom((v) => (v === undefined || ['immediate', 'after_close'].includes(v) ? null : 'invalid'))],
+    rewardPoints: [custom((v) => (v === undefined || Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 10000 ? null : 'reward points must be an integer from 0 to 10000'))],
     status: [custom((v) => (v === undefined || ['draft', 'active', 'closed', 'archived'].includes(v) ? null : 'invalid'))],
   });
 
@@ -109,6 +116,7 @@ function serializePoll(poll, { mine = null, isAdmin = false, results = null, liv
     allowChangeVote: poll.allowChangeVote,
     visibility: poll.visibility,
     resultsVisibility: poll.resultsVisibility,
+    rewardPoints: poll.rewardPoints || 0,
     status: poll.status,
     liveStatus: status,
     myVote: mine ? mine.optionIds.map(String) : null,
@@ -190,6 +198,7 @@ const createPoll = asyncHandler(async (req, res) => {
     allowChangeVote: !!b.allowChangeVote,
     visibility: b.visibility || 'team',
     resultsVisibility: b.resultsVisibility || 'immediate',
+    rewardPoints: Number(b.rewardPoints || 0),
     status: b.status || 'draft',
     createdBy: req.user._id,
   });
@@ -220,6 +229,7 @@ const updatePoll = asyncHandler(async (req, res) => {
   if (body.allowChangeVote !== undefined) poll.allowChangeVote = !!body.allowChangeVote;
   if (body.visibility !== undefined) poll.visibility = body.visibility;
   if (body.resultsVisibility !== undefined) poll.resultsVisibility = body.resultsVisibility;
+  if (body.rewardPoints !== undefined) poll.rewardPoints = Number(body.rewardPoints);
 
   if (body.options !== undefined) {
     const texts = body.options.map((o) => String(typeof o === 'string' ? o : o.text).trim());
@@ -326,6 +336,18 @@ const vote = asyncHandler(async (req, res) => {
     } catch (e) {
       if (e.code === 11000) throw ApiError.conflict('You have already voted in this poll', 'ALREADY_VOTED');
       throw e;
+    }
+
+    if (!existing && poll.rewardPoints > 0) {
+      await Reward.create({
+        member: req.user._id,
+        sourceType: 'poll',
+        sourceId: poll._id,
+        points: poll.rewardPoints,
+        feedback: `Points for voting in "${poll.question}".`,
+        awardedBy: poll.createdBy,
+      });
+      await recalcUserScore(req.user._id);
     }
   }
 

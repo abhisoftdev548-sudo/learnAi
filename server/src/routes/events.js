@@ -17,5 +17,6 @@ router.post('/:id/status', requireAdmin, c.setEventStatus);
 router.delete('/:id', c.deleteEvent);
 router.get('/:id/registrations', requireAdmin, c.listRegistrations);
 router.post('/:id/attendance', requireAdmin, c.setAttendance);
+router.post('/:id/rewards', requireAdmin, c.awardEventReward);
 
 module.exports = router;

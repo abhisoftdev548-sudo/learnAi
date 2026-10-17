@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const Event = require('../models/Event');
 const EventRegistration = require('../models/Event').EventRegistration;
 const User = require('../models/User');
+const Reward = require('../models/Reward');
+const { recalcUserScore } = require('../services/leaderboard.service');
 const { notifyAllApproved, notify } = require('../models/notification.helper');
 const { ApiError, asyncHandler, ok } = require('../utils/errors');
 const { validate, required, minLength, maxLength, isUrl, oneOf, isDate, custom } = require('../utils/validate');
@@ -28,6 +30,7 @@ function validateEventBody(body, { partial = false } = {}) {
     startTime: [custom((v) => (v === undefined || TIME_RX.test(String(v)) ? null : 'Start time must be HH:MM'))],
     endTime: [custom((v) => (v === undefined || TIME_RX.test(String(v)) ? null : 'End time must be HH:MM'))],
     registrationDeadline: [isDate()],
+    rewardPoints: [custom((v) => (v === undefined || Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 10000 ? null : 'reward points must be an integer from 0 to 10000'))],
     meetingUrl: [isUrl('Meeting URL must be a valid http(s) URL')],
     coverImage: [custom((v) => (
       v === undefined || v === '' || /^https?:\/\//.test(String(v))
@@ -63,6 +66,7 @@ function serializeEvent(e, { isAdmin = false, registered = false, attending = fa
     isPrivate: e.isPrivate,
     coverImage: e.coverImage,
     registrationDeadline: e.registrationDeadline ? new Date(e.registrationDeadline).toISOString() : null,
+    rewardPoints: e.rewardPoints || 0,
     status: e.status,
     past,
     registered,
@@ -162,6 +166,7 @@ const createEvent = asyncHandler(async (req, res) => {
     coverImage: b.coverImage || '',
     isPrivate: !!b.isPrivate,
     registrationDeadline: b.registrationDeadline ? new Date(b.registrationDeadline) : null,
+    rewardPoints: Number(b.rewardPoints || 0),
     status: b.status || 'draft',
     createdBy: req.user._id,
   });
@@ -186,7 +191,7 @@ const updateEvent = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('End time must be after start time', 'INVALID_TIME_RANGE');
   }
 
-  const fields = ['title', 'description', 'hostName', 'category', 'platform', 'meetingUrl', 'coverImage', 'isPrivate'];
+  const fields = ['title', 'description', 'hostName', 'category', 'platform', 'meetingUrl', 'coverImage', 'isPrivate', 'rewardPoints'];
   for (const f of fields) if (body[f] !== undefined) event[f] = body[f];
   if (body.date !== undefined) event.date = new Date(body.date);
   if (body.startTime !== undefined) event.startTime = body.startTime;
@@ -194,6 +199,7 @@ const updateEvent = asyncHandler(async (req, res) => {
   if (body.registrationDeadline !== undefined) {
     event.registrationDeadline = body.registrationDeadline ? new Date(body.registrationDeadline) : null;
   }
+  if (body.rewardPoints !== undefined) event.rewardPoints = Number(body.rewardPoints);
   await event.save();
   return ok(res, { event: serializeEvent(event, { isAdmin: true }) });
 });
@@ -247,7 +253,7 @@ const registerForEvent = asyncHandler(async (req, res) => {
   if (event.registrationDeadline && now > new Date(event.registrationDeadline)) {
     throw ApiError.conflict('Registration for this event has closed', 'REGISTRATION_CLOSED');
   }
-  if (now > new Date(event.date)) {
+  if (now >= eventStartAt(event)) {
     throw ApiError.conflict('This event already took place', 'EVENT_PAST');
   }
 
@@ -281,7 +287,12 @@ const listRegistrations = asyncHandler(async (req, res) => {
     .populate('member', 'name username email photoUrl')
     .sort({ registeredAt: -1 })
     .lean();
-  return ok(res, { items: regs, total: regs.length });
+  const rewards = await Reward.find({ sourceType: 'event', sourceId: event._id }).lean();
+  const rewardMap = new Map(rewards.map((r) => [String(r.member), r]));
+  return ok(res, {
+    items: regs.map((r) => ({ ...r, reward: rewardMap.get(String(r.member?._id || r.member)) || null })),
+    total: regs.length,
+  });
 });
 
 /** POST /api/events/:id/attendance (admin) — { memberId, status: attended|no_show|registered } */
@@ -309,6 +320,36 @@ const setAttendance = asyncHandler(async (req, res) => {
   return ok(res, { registration: reg, eventsAttended: attendedCount });
 });
 
+/** POST /api/events/:id/rewards (admin) — { memberId, points, feedback } */
+const awardEventReward = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid event id');
+  const { memberId, points, feedback = '' } = req.body || {};
+  if (!mongoose.isValidObjectId(memberId)) throw ApiError.badRequest('Invalid member id');
+  if (!Number.isInteger(Number(points)) || Number(points) < 0 || Number(points) > 10000) {
+    throw ApiError.badRequest('points must be an integer from 0 to 10000');
+  }
+  const registration = await EventRegistration.findOne({ event: req.params.id, member: memberId });
+  if (!registration) throw ApiError.notFound('Member is not registered for this event');
+  if (String(feedback).length > 3000) throw ApiError.badRequest('feedback must be at most 3000 characters');
+
+  const reward = await Reward.findOneAndUpdate(
+    { sourceType: 'event', sourceId: req.params.id, member: memberId },
+    {
+      $set: {
+        points: Number(points),
+        feedback: String(feedback),
+        awardedBy: req.user._id,
+      },
+      $setOnInsert: { sourceType: 'event', sourceId: req.params.id, member: memberId },
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
+  const score = await recalcUserScore(memberId);
+  await notify(memberId, 'points_awarded', 'Event points awarded',
+    `${Number(points)} points awarded for participating in the event.`, `/events/${req.params.id}`);
+  return ok(res, { reward, score });
+});
+
 module.exports = {
   eventStartAt,
   listEvents,
@@ -321,4 +362,5 @@ module.exports = {
   cancelRegistration,
   listRegistrations,
   setAttendance,
+  awardEventReward,
 };

@@ -33,6 +33,7 @@ const pollSchema = new mongoose.Schema(
 
     visibility: { type: String, enum: ['team', 'admins'], default: 'team' },
     resultsVisibility: { type: String, enum: ['immediate', 'after_close'], default: 'immediate' },
+    rewardPoints: { type: Number, default: 0, min: 0, max: 10000 },
 
     status: { type: String, enum: ['draft', 'active', 'closed', 'archived'], default: 'draft', index: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

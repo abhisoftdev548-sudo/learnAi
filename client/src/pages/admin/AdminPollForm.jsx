@@ -5,6 +5,7 @@ import { ArrowLeft, Save, Rocket, Plus, X } from 'lucide-react';
 import api, { apiError, uploadImages } from '../../services/api';
 import { PageLoader, Spinner } from '../../components/Spinner';
 import { Field, Input, Textarea, SubmitButton } from '../../components/Form';
+import { localDateTimeToIso } from '../../utils/datetime';
 import AdminNav from './AdminNav';
 
 const toLocalInput = (d) => {
@@ -29,7 +30,7 @@ export default function AdminPollForm() {
   const empty = {
     question: '', description: '', options: ['', ''],
     startsAt: toLocalInput(new Date()), endsAt: inDays(7),
-    anonymous: false, allowMultiple: false, allowChangeVote: true,
+    anonymous: false, allowMultiple: false, allowChangeVote: true, rewardPoints: 0,
     visibility: 'team', resultsVisibility: 'immediate',
   };
   const [form, setForm] = useState(empty);
@@ -46,7 +47,7 @@ export default function AdminPollForm() {
           image: p.image || '',
           startsAt: toLocalInput(p.startsAt), endsAt: toLocalInput(p.endsAt),
           anonymous: p.anonymous, allowMultiple: p.allowMultiple, allowChangeVote: p.allowChangeVote,
-          visibility: p.visibility, resultsVisibility: p.resultsVisibility,
+          visibility: p.visibility, resultsVisibility: p.resultsVisibility, rewardPoints: p.rewardPoints || 0,
         });
       })
       .catch((e) => setError(apiError(e)))
@@ -73,6 +74,8 @@ export default function AdminPollForm() {
     try {
       const payload = {
         ...form,
+        startsAt: localDateTimeToIso(form.startsAt),
+        endsAt: localDateTimeToIso(form.endsAt),
         image: imageFile ? (await uploadImages([imageFile]))[0] : image,
         options: form.options.map((o) => ({ text: o.trim() })).filter((o) => o.text),
         ...(nextStatus ? { status: nextStatus } : {}),
@@ -83,7 +86,10 @@ export default function AdminPollForm() {
       toast.success(nextStatus === 'active' ? 'Poll opened 🗳️' : 'Poll saved');
       return data.data.poll.id;
     } catch (e) {
-      toast.error(apiError(e));
+      const details = e?.response?.data?.errors
+        ?.map((item) => `${item.field}: ${item.message}`)
+        .join(', ');
+      toast.error(details || apiError(e));
       return null;
     } finally {
       setBusy(false);
@@ -150,12 +156,15 @@ export default function AdminPollForm() {
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Voting opens" required>
             <Input type="datetime-local" value={form.startsAt} onChange={set('startsAt')} />
           </Field>
           <Field label="Voting closes" required>
             <Input type="datetime-local" value={form.endsAt} onChange={set('endsAt')} />
+          </Field>
+          <Field label="Points for voting" hint="Awarded automatically once per member">
+            <Input type="number" min={0} max={10000} value={form.rewardPoints} onChange={set('rewardPoints')} />
           </Field>
         </div>
 

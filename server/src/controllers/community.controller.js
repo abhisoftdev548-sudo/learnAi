@@ -197,6 +197,25 @@ const unlikePost = asyncHandler(async (req, res) => {
   return ok(res, { liked: false, likeCount: likeCount ? likeCount.likeCount : 0 });
 });
 
+/** GET /api/community/:id/likes */
+const listLikes = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid post id');
+  const post = await Post.findOne({ _id: req.params.id, status: 'visible' }).select('_id').lean();
+  if (!post) throw ApiError.notFound('Post not found');
+
+  const likes = await Like.find({ post: post._id })
+    .sort({ createdAt: -1 })
+    .populate('user', 'name username photoUrl')
+    .lean();
+
+  return ok(res, {
+    items: likes
+      .map((l) => l.user)
+      .filter(Boolean)
+      .map((u) => ({ id: u._id, name: u.name, username: u.username, photoUrl: u.photoUrl })),
+  });
+});
+
 /** GET /api/community/:id/comments */
 const listComments = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid post id');
@@ -401,6 +420,7 @@ module.exports = {
   getPost,
   likePost,
   unlikePost,
+  listLikes,
   listComments,
   createComment,
   deleteComment,

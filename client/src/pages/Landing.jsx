@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import {
-  Rocket, Target, Users, Trophy, CalendarDays, MessageSquare, ShieldCheck,
+  Target, Users, Trophy, CalendarDays, MessageSquare, ShieldCheck,
   ArrowRight, CheckCircle2, Star,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 const FEATURES = [
   { icon: Target, title: 'Real challenges', body: 'Coding, web, AI/ML, design and communication tasks with deadlines, submissions and admin review.' },
@@ -41,14 +42,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white">
       {/* Nav */}
       <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 text-white">
-            <Rocket className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            Growth Circle
-          </span>
-        </div>
+        <BrandLogo className="h-10 w-10" nameClassName="text-lg font-bold tracking-tight text-slate-900" />
         <nav className="flex items-center gap-3">
           {authStatus === 'out' && (
             <Link to="/login" className="btn-ghost">Sign in</Link>

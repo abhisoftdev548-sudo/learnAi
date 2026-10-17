@@ -8,6 +8,7 @@ import EmptyState from '../components/EmptyState';
 import Pagination from '../components/Pagination';
 import { Input, Select } from '../components/Form';
 import { formatDate, CATEGORY_LABELS } from '../utils/format';
+import ImageLightbox from '../components/ImageLightbox';
 
 export default function Events() {
   const [data, setData] = useState(null);
@@ -15,6 +16,7 @@ export default function Events() {
   const [tab, setTab] = useState('upcoming'); // upcoming | past
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
+  const [previewImage, setPreviewImage] = useState('');
 
   const params = useMemo(() => {
     const p = new URLSearchParams({ page: String(page), limit: '12' });
@@ -73,7 +75,17 @@ export default function Events() {
             {data.items.map((e) => (
               <Link key={e.id} to={`/events/${e.id}`} className="card group flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-pop">
                 {e.coverImage && (
-                  <img src={e.coverImage} alt="" className="mb-4 aspect-video w-full rounded-xl object-cover" loading="lazy" referrerPolicy="no-referrer" />
+                  <img
+                    src={e.coverImage}
+                    alt=""
+                    className="mb-4 aspect-video w-full cursor-zoom-in rounded-xl object-cover"
+                    loading="lazy"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setPreviewImage(e.coverImage);
+                    }}
+                  />
                 )}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-wrap gap-1.5">
@@ -119,6 +131,7 @@ export default function Events() {
           <Pagination page={data.page} pages={data.pages} total={data.total} onChange={setPage} />
         </>
       )}
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </div>
   );
 }

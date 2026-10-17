@@ -29,7 +29,7 @@ export default function AdminEventForm() {
     date: toDateInput(new Date(Date.now() + 3 * 86400000)),
     startTime: '18:00', endTime: '19:30',
     platform: '', meetingUrl: '', coverImage: '', isPrivate: false,
-    registrationDeadline: '', status: 'draft',
+    registrationDeadline: '', rewardPoints: 0, status: 'draft',
   };
   const [form, setForm] = useState(empty);
 
@@ -43,7 +43,7 @@ export default function AdminEventForm() {
           date: toDateInput(e.date), startTime: e.startTime, endTime: e.endTime,
           platform: e.platform || '', meetingUrl: e.meetingUrl || '', coverImage: e.coverImage || '',
           isPrivate: e.isPrivate, registrationDeadline: e.registrationDeadline ? toDateInput(e.registrationDeadline) : '',
-          status: e.status,
+          rewardPoints: e.rewardPoints || 0, status: e.status,
         });
       })
       .catch((e) => setError(apiError(e)))
@@ -144,9 +144,12 @@ export default function AdminEventForm() {
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Registration deadline" hint="Optional — leave empty until event day">
             <Input type="date" value={form.registrationDeadline} onChange={set('registrationDeadline')} />
+          </Field>
+          <Field label="Default event points" hint="Admin awards these manually after attendance">
+            <Input type="number" min={0} max={10000} value={form.rewardPoints} onChange={set('rewardPoints')} />
           </Field>
           <Field label="Cover image" hint="Optional URL or upload (PNG, JPG, WEBP, GIF)">
             <Input value={form.coverImage} onChange={set('coverImage')} placeholder="https://…" />

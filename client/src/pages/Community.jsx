@@ -8,6 +8,7 @@ import api, { apiError, uploadImages } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import Modal from '../components/Modal';
+import ImageLightbox from '../components/ImageLightbox';
 import StatusBadge from '../components/StatusBadge';
 import { PageLoader, Spinner } from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
@@ -32,7 +33,6 @@ function PostImage({ src }) {
       alt=""
       className="h-full w-full object-contain transition hover:scale-[1.02]"
       loading="lazy"
-      referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
     />
   );
@@ -41,6 +41,7 @@ function PostImage({ src }) {
 function PostCard({ post, onLike, onReport, onDelete }) {
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
 
   const removePost = async () => {
     if (!window.confirm('Delete this post for everyone?')) return;
@@ -97,9 +98,9 @@ function PostCard({ post, onLike, onReport, onDelete }) {
           {post.images?.length > 0 && (
             <div className="mt-3 grid grid-cols-2 justify-items-center gap-2 sm:grid-cols-3">
               {post.images.map((img) => (
-                <a key={img} href={img} target="_blank" rel="noreferrer" className="aspect-[9/16] w-full max-w-40 overflow-hidden rounded-xl border border-slate-100">
+                <button key={img} type="button" onClick={() => setPreviewImage(img)} className="aspect-[9/16] w-full max-w-40 overflow-hidden rounded-xl border border-slate-100">
                   <PostImage src={img} />
-                </a>
+                </button>
               ))}
             </div>
           )}
@@ -137,6 +138,7 @@ function PostCard({ post, onLike, onReport, onDelete }) {
           </div>
         </div>
       </div>
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </article>
   );
 }

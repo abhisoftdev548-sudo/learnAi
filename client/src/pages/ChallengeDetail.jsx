@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api, { apiError } from '../services/api';
 import { PageLoader, Spinner } from '../components/Spinner';
+import ImageLightbox from '../components/ImageLightbox';
 import StatusBadge from '../components/StatusBadge';
 import { Field, Input, Textarea, SubmitButton } from '../components/Form';
 import {
@@ -107,6 +108,7 @@ export default function ChallengeDetail() {
   const [answers, setAnswers] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [busy, setBusy] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
 
   const load = () => {
     api.get(`/challenges/${id}`)
@@ -187,7 +189,12 @@ export default function ChallengeDetail() {
         <div className="space-y-6 lg:col-span-2">
           <div className="card p-6">
             {c.coverImage && (
-              <img src={c.coverImage} alt="" className="mb-5 aspect-video w-full rounded-xl object-contain bg-slate-50" referrerPolicy="no-referrer" />
+              <img
+                src={c.coverImage}
+                alt=""
+                className="mb-5 aspect-video w-full cursor-zoom-in rounded-xl object-contain bg-slate-50"
+                onClick={() => setPreviewImage(c.coverImage)}
+              />
             )}
             <div className="flex flex-wrap items-center gap-2">
               <span className="badge bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">
@@ -400,6 +407,7 @@ export default function ChallengeDetail() {
           </div>
         </div>
       </div>
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </div>
   );
 }

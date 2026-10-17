@@ -6,6 +6,7 @@ import api, { apiError, uploadImages } from '../../services/api';
 import { PageLoader, Spinner } from '../../components/Spinner';
 import { Field, Input, Textarea, Select, SubmitButton } from '../../components/Form';
 import { CATEGORIES, DIFFICULTIES, SUBMISSION_TYPES } from '../../utils/constants';
+import { localDateTimeToIso } from '../../utils/datetime';
 import AdminNav from './AdminNav';
 
 const TYPE_LABELS = {
@@ -99,6 +100,8 @@ export default function AdminChallengeForm() {
     try {
       const payload = {
         ...form,
+        startAt: localDateTimeToIso(form.startAt),
+        deadline: localDateTimeToIso(form.deadline),
         requirements: form.requirements.map((r, i) => ({ key: `req_${i + 1}`, ...r })),
         referenceLinks: form.referenceLinks.filter(Boolean),
         ...(nextStatus ? { status: nextStatus } : {}),

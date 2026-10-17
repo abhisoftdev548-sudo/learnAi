@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Rocket, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Field, Input, SubmitButton } from '../../components/Form';
 import { apiFieldErrors } from '../../services/api';
+import BrandLogo from '../../components/BrandLogo';
 
 export default function Login() {
   const { login, authStatus } = useAuth();
@@ -52,10 +53,7 @@ export default function Login() {
       <div className="relative hidden w-1/2 flex-col justify-between bg-slate-900 p-12 lg:flex">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(109,63,240,0.35),transparent_50%)]" />
         <Link to="/" className="relative flex items-center gap-2.5 text-white">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-500">
-            <Rocket className="h-5 w-5" />
-          </span>
-          <span className="text-lg font-bold">Growth Circle</span>
+          <BrandLogo className="h-10 w-10" nameClassName="text-lg font-bold" />
         </Link>
         <div className="relative">
           <h2 className="text-3xl font-bold leading-tight text-white">
@@ -73,10 +71,7 @@ export default function Login() {
       <div className="flex w-full items-center justify-center px-4 py-12 sm:px-6 lg:w-1/2">
         <div className="w-full max-w-md animate-fadeUp">
           <Link to="/" className="mb-8 inline-flex items-center gap-2 lg:hidden">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 text-white">
-              <Rocket className="h-5 w-5" />
-            </span>
-            <span className="text-lg font-bold text-slate-900">Growth Circle</span>
+            <BrandLogo className="h-10 w-10" nameClassName="text-lg font-bold text-slate-900" />
           </Link>
           <h1 className="text-2xl font-bold text-slate-900">Sign in to your account</h1>
           <p className="mt-1.5 text-sm text-slate-500">

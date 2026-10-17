@@ -18,6 +18,7 @@ export default function AdminEvents() {
   const [confirm, setConfirm] = useState(null);
   const [attendTarget, setAttendTarget] = useState(null);
   const [attendees, setAttendees] = useState(null);
+  const [rewardDrafts, setRewardDrafts] = useState({});
 
   const load = () => api.get('/events?only=all&limit=50')
     .then((r) => setData(r.data.data))
@@ -55,9 +56,18 @@ export default function AdminEvents() {
   const openAttendees = async (ev) => {
     setAttendTarget(ev);
     setAttendees(null);
+    setRewardDrafts({});
     try {
       const { data: r } = await api.get(`/events/${ev.id}/registrations`);
       setAttendees(r.data.items);
+      setRewardDrafts(Object.fromEntries(
+        r.data.items
+          .filter((item) => item.reward)
+          .map((item) => [item.member._id, {
+            points: item.reward.points,
+            feedback: item.reward.feedback || '',
+          }])
+      ));
     } catch (e) {
       toast.error(apiError(e));
       setAttendTarget(null);
@@ -72,6 +82,27 @@ export default function AdminEvents() {
     } catch (e) {
       toast.error(apiError(e));
     }
+  };
+
+  const awardReward = async (memberId) => {
+    const draft = rewardDrafts[memberId] || {};
+    try {
+      await api.post(`/events/${attendTarget.id}/rewards`, {
+        memberId,
+        points: Number(draft.points || attendTarget.rewardPoints || 0),
+        feedback: draft.feedback || '',
+      });
+      toast.success('Event points awarded');
+    } catch (e) {
+      toast.error(apiError(e));
+    }
+  };
+
+  const updateRewardDraft = (memberId, patch) => {
+    setRewardDrafts((current) => ({
+      ...current,
+      [memberId]: { ...(current[memberId] || {}), ...patch },
+    }));
   };
 
   return (
@@ -181,6 +212,26 @@ export default function AdminEvents() {
                   <option value="attended">Attended</option>
                   <option value="no_show">No show</option>
                 </select>
+                <div className="flex w-full flex-wrap gap-2 pl-12">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10000"
+                    className="input !w-28 !py-1.5 !text-xs"
+                    placeholder={`Points (${attendTarget.rewardPoints || 0})`}
+                    value={rewardDrafts[r.member._id]?.points ?? ''}
+                    onChange={(e) => updateRewardDraft(r.member._id, { points: e.target.value })}
+                  />
+                  <input
+                    className="input min-w-[220px] flex-1 !py-1.5 !text-xs"
+                    placeholder="Review / feedback"
+                    value={rewardDrafts[r.member._id]?.feedback ?? ''}
+                    onChange={(e) => updateRewardDraft(r.member._id, { feedback: e.target.value })}
+                  />
+                  <button type="button" className="btn-primary !py-1.5 !text-xs" onClick={() => awardReward(r.member._id)}>
+                    {r.reward ? 'Update points' : 'Award points'}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Rocket, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Field, Input, Textarea, SubmitButton } from '../../components/Form';
+import BrandLogo from '../../components/BrandLogo';
 
 function Rule({ ok, children }) {
   return (
@@ -82,12 +83,7 @@ export default function Register() {
     <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-xl">
         <Link to="/" className="mx-auto mb-8 flex w-fit items-center gap-2.5">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 text-white">
-            <Rocket className="h-5 w-5" />
-          </span>
-          <span className="text-xl font-bold text-slate-900">
-            Growth Circle
-          </span>
+          <BrandLogo className="h-12 w-12" nameClassName="text-xl font-bold text-slate-900" />
         </Link>
 
         <div className="card p-6 sm:p-8">

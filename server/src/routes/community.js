@@ -17,6 +17,7 @@ router.delete('/:id', c.removePost);
 router.get('/:id', c.getPost);
 router.post('/:id/like', c.likePost);
 router.delete('/:id/like', c.unlikePost);
+router.get('/:id/likes', c.listLikes);
 router.get('/:id/comments', c.listComments);
 router.post('/:id/comments', c.createComment);
 router.post('/:id/report', c.reportPost);

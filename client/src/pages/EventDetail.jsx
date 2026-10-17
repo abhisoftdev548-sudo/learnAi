@@ -8,6 +8,7 @@ import {
 import api, { apiError } from '../services/api';
 import { PageLoader, Spinner } from '../components/Spinner';
 import StatusBadge from '../components/StatusBadge';
+import ImageLightbox from '../components/ImageLightbox';
 import { formatDateTime, CATEGORY_LABELS } from '../utils/format';
 
 export default function EventDetail() {
@@ -16,6 +17,7 @@ export default function EventDetail() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
 
   const load = () => api.get(`/events/${id}`)
     .then((r) => setData(r.data.data))
@@ -55,7 +57,12 @@ export default function EventDetail() {
       <div className="card overflow-hidden">
         <div className="bg-gradient-to-r from-primary-600 to-indigo-600 px-6 py-8 text-white sm:px-8">
           {e.coverImage && (
-            <img src={e.coverImage} alt="" className="mb-5 aspect-video w-full rounded-xl object-contain bg-white/10" referrerPolicy="no-referrer" />
+            <img
+              src={e.coverImage}
+              alt=""
+              className="mb-5 aspect-video w-full cursor-zoom-in rounded-xl object-contain bg-white/10"
+              onClick={() => setPreviewImage(e.coverImage)}
+            />
           )}
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge bg-white/15 text-white ring-1 ring-inset ring-white/25">
@@ -149,6 +156,7 @@ export default function EventDetail() {
           </div>
         </div>
       </div>
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </div>
   );
 }

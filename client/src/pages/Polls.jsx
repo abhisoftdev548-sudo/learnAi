@@ -7,6 +7,7 @@ import { PageLoader } from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
 import { Input } from '../components/Form';
 import { formatDateTime, truncate } from '../utils/format';
+import ImageLightbox from '../components/ImageLightbox';
 
 function PollStatus({ poll }) {
   const map = { active: 'active', scheduled: 'scheduled', closed: 'closed', archived: 'archived', draft: 'draft' };
@@ -17,6 +18,7 @@ export default function Polls() {
   const [data, setData] = useState(null);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
+  const [previewImage, setPreviewImage] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -45,7 +47,19 @@ export default function Polls() {
       <h2 className="mt-3 line-clamp-2 text-base font-semibold leading-snug text-slate-900 group-hover:text-primary-700">
         {p.question}
       </h2>
-      {p.image && <img src={p.image} alt="" className="mt-3 h-32 w-full rounded-lg bg-slate-50 object-contain" loading="lazy" referrerPolicy="no-referrer" />}
+      {p.image && (
+        <img
+          src={p.image}
+          alt=""
+          className="mt-3 h-32 w-full cursor-zoom-in rounded-lg bg-slate-50 object-contain"
+          loading="lazy"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setPreviewImage(p.image);
+          }}
+        />
+      )}
       {p.description && <p className="mt-1 line-clamp-2 text-sm text-slate-500">{truncate(p.description, 120)}</p>}
       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
         <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Ends {formatDateTime(p.endsAt)}</span>
@@ -87,6 +101,7 @@ export default function Polls() {
           )}
         </div>
       )}
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </div>
   );
 }

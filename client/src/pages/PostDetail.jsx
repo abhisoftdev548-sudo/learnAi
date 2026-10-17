@@ -5,6 +5,8 @@ import { ArrowLeft, Heart, MessageCircle, ExternalLink, Send, Trash2 } from 'luc
 import api, { apiError } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
+import Modal from '../components/Modal';
+import ImageLightbox from '../components/ImageLightbox';
 import StatusBadge from '../components/StatusBadge';
 import { PageLoader, Spinner } from '../components/Spinner';
 import { Field, Textarea, SubmitButton } from '../components/Form';
@@ -27,7 +29,6 @@ function PostImage({ src }) {
       alt=""
       className="h-full w-full object-contain"
       loading="lazy"
-      referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
     />
   );
@@ -41,6 +42,11 @@ export default function PostDetail() {
   const [error, setError] = useState('');
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const [likesOpen, setLikesOpen] = useState(false);
+  const [likesBusy, setLikesBusy] = useState(false);
+  const [likes, setLikes] = useState([]);
+  const [likesError, setLikesError] = useState('');
+  const [previewImage, setPreviewImage] = useState('');
 
   const load = () => {
     api.get(`/community/${id}`)
@@ -61,6 +67,21 @@ export default function PostDetail() {
     } catch (e) {
       toast.error(apiError(e));
       load();
+    }
+  };
+
+  const openLikes = async () => {
+    setLikesOpen(true);
+    setLikesBusy(true);
+    setLikesError('');
+    try {
+      const { data } = await api.get(`/community/${id}/likes`);
+      setLikes(data.data.items || []);
+    } catch (e) {
+      setLikes([]);
+      setLikesError(apiError(e));
+    } finally {
+      setLikesBusy(false);
     }
   };
 
@@ -139,16 +160,19 @@ export default function PostDetail() {
             {post.images?.length > 0 && (
               <div className="mt-4 grid grid-cols-2 justify-items-center gap-3">
                 {post.images.map((img) => (
-                <a key={img} href={img} target="_blank" rel="noreferrer" className="aspect-[9/16] w-full max-w-40 overflow-hidden rounded-xl border border-slate-100">
+                <button key={img} type="button" onClick={() => setPreviewImage(img)} className="aspect-[9/16] w-full max-w-40 overflow-hidden rounded-xl border border-slate-100">
                     <PostImage src={img} />
-                  </a>
+                  </button>
                 ))}
               </div>
             )}
 
             <div className="mt-5 flex items-center gap-5 border-t border-slate-100 pt-4">
               <button type="button" onClick={like} className={`inline-flex items-center gap-1.5 text-sm font-medium ${post.likedByMe ? 'text-rose-500' : 'text-slate-500 hover:text-rose-500'}`}>
-                <Heart className={`h-4 w-4 ${post.likedByMe ? 'fill-rose-500' : ''}`} /> {post.likeCount}
+                <Heart className={`h-4 w-4 ${post.likedByMe ? 'fill-rose-500' : ''}`} /> Like
+              </button>
+              <button type="button" onClick={openLikes} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary-600">
+                {post.likeCount} like{post.likeCount === 1 ? '' : 's'}
               </button>
               <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500">
                 <MessageCircle className="h-4 w-4" /> {comments.length}
@@ -195,6 +219,31 @@ export default function PostDetail() {
           ))}
         </ul>
       </section>
+
+      <Modal open={likesOpen} onClose={() => setLikesOpen(false)} title="Liked by" size="sm">
+        {likesBusy ? (
+          <PageLoader label="Loading likes…" />
+        ) : likesError ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{likesError}</div>
+        ) : likes.length === 0 ? (
+          <p className="text-sm text-slate-500">No likes yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {likes.map((u) => (
+              <li key={u.id} className="flex items-center gap-3">
+                <Avatar user={u} size="sm" />
+                <div className="min-w-0">
+                  <Link to={`/members/${u.username}`} className="block truncate text-sm font-semibold text-slate-900 hover:text-primary-600">
+                    {u.name}
+                  </Link>
+                  <p className="truncate text-xs text-slate-500">@{u.username}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
+      <ImageLightbox src={previewImage} onClose={() => setPreviewImage('')} />
     </div>
   );
 }

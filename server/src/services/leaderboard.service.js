@@ -1,6 +1,7 @@
 'use strict';
 const mongoose = require('mongoose');
 const SubmissionReview = require('../models/SubmissionReview');
+const Reward = require('../models/Reward');
 
 /**
  * Recompute a member's denormalized score from authoritative review records.
@@ -17,7 +18,8 @@ const SubmissionReview = require('../models/SubmissionReview');
 async function recalcUserScore(userId) {
   const uid = new mongoose.Types.ObjectId(String(userId));
 
-  const [totals] = await SubmissionReview.aggregate([
+  const [[submissionTotals], [rewardTotals]] = await Promise.all([
+    SubmissionReview.aggregate([
     { $match: { member: uid, isLatest: true, status: 'approved' } },
     {
       $group: {
@@ -27,11 +29,18 @@ async function recalcUserScore(userId) {
         last: { $max: '$createdAt' },
       },
     },
+    ]),
+    Reward.aggregate([
+      { $match: { member: uid } },
+      { $group: { _id: null, points: { $sum: '$points' }, last: { $max: '$updatedAt' } } },
+    ]),
   ]);
 
-  const points = totals ? totals.points : 0;
-  const completed = totals ? totals.challenges.length : 0;
-  const lastScoredAt = totals ? totals.last : null;
+  const points = (submissionTotals?.points || 0) + (rewardTotals?.points || 0);
+  const completed = submissionTotals ? submissionTotals.challenges.length : 0;
+  const reviewLast = submissionTotals?.last ? new Date(submissionTotals.last).getTime() : 0;
+  const rewardLast = rewardTotals?.last ? new Date(rewardTotals.last).getTime() : 0;
+  const lastScoredAt = reviewLast || rewardLast ? new Date(Math.max(reviewLast, rewardLast)) : null;
 
   await mongoose.model('User').updateOne(
     { _id: uid },
@@ -92,7 +101,19 @@ async function leaderboard({ period = 'all', limit = 100, forUserId = null } = {
     ];
   }
 
-  const scored = await SubmissionReview.aggregate(pipeline);
+  const [scored, rewarded] = await Promise.all([
+    SubmissionReview.aggregate(pipeline),
+    Reward.aggregate([
+      ...(start ? [{ $match: { updatedAt: { $gte: start } } }] : []),
+      {
+        $group: {
+          _id: '$member',
+          points: { $sum: '$points' },
+          last: { $max: '$updatedAt' },
+        },
+      },
+    ]),
+  ]);
   const byUser = new Map(
     scored.map((s) => [String(s._id), {
       points: s.points,
@@ -100,6 +121,13 @@ async function leaderboard({ period = 'all', limit = 100, forUserId = null } = {
       lastScoredAt: s.last || null,
     }])
   );
+  rewarded.forEach((r) => {
+    const key = String(r._id);
+    const current = byUser.get(key) || { points: 0, completed: 0, lastScoredAt: null };
+    current.points += r.points;
+    if (!current.lastScoredAt || new Date(r.last) > new Date(current.lastScoredAt)) current.lastScoredAt = r.last;
+    byUser.set(key, current);
+  });
 
   const members = await mongoose.model('User')
     .find({ status: 'approved' })
