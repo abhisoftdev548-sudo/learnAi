@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Growth Circle rocket logo">
+  <defs>
+    <linearGradient id="rocketBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#rocketBg)"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+    <path d="M14 42c-3 2-4 8-4 8s6-1 8-4c1-1 1-3 0-4"/>
+    <path d="M18 38 14 34"/>
+    <path d="M23 43 20 39"/>
+    <path d="M19 35c2-7 8-13 18-17 3-1 7-2 11-2 0 4-1 8-2 11-4 10-10 16-17 18-3-3-6-6-10-10Z"/>
+    <path d="M29 33a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z"/>
+  </g>
+</svg>

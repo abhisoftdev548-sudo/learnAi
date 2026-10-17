@@ -10,16 +10,35 @@ import api from '../services/api';
 import BrandLogo from '../components/BrandLogo';
 
 const NAV = [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { to: '/challenges', label: 'Challenges', icon: Target },
-  { to: '/events', label: 'Events', icon: CalendarDays },
-  { to: '/community', label: 'Community', icon: MessagesSquare },
-  { to: '/chat', label: 'Group Chat', icon: MessagesSquare },
-  { to: '/polls', label: 'Polls', icon: BarChart3 },
-  { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { to: '/members', label: 'Members', icon: Users },
-  { to: '/profile', label: 'My Profile', icon: User },
+  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, badge: null },
+  { to: '/challenges', label: 'Challenges', icon: Target, badge: 'challenges' },
+  { to: '/events', label: 'Events', icon: CalendarDays, badge: 'events' },
+  { to: '/community', label: 'Community', icon: MessagesSquare, badge: 'community' },
+  { to: '/chat', label: 'Group Chat', icon: MessagesSquare, badge: 'chat' },
+  { to: '/polls', label: 'Polls', icon: BarChart3, badge: 'polls' },
+  { to: '/leaderboard', label: 'Leaderboard', icon: Trophy, badge: null },
+  { to: '/members', label: 'Members', icon: Users, badge: 'members' },
+  { to: '/profile', label: 'My Profile', icon: User, badge: null },
 ];
+
+const SEEN_KEYS = {
+  chat: 'growth-circle-chat-seen-at',
+  community: 'growth-circle-community-seen-at',
+  members: 'growth-circle-members-seen-at',
+};
+
+function getSeenAt(key) {
+  const value = window.localStorage.getItem(SEEN_KEYS[key]);
+  return value ? new Date(value).getTime() : Date.now();
+}
+
+function markSeen(key) {
+  window.localStorage.setItem(SEEN_KEYS[key], new Date().toISOString());
+}
+
+function countAfter(items, timestamp, field = 'createdAt') {
+  return items.filter((item) => new Date(item[field]).getTime() > timestamp).length;
+}
 
 /** Desktop sidebar + mobile drawer + topbar. */
 export default function DashboardLayout({ children, admin = false }) {
@@ -28,6 +47,14 @@ export default function DashboardLayout({ children, admin = false }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [badges, setBadges] = useState({
+    challenges: 0,
+    events: 0,
+    community: 0,
+    chat: 0,
+    polls: 0,
+    members: 0,
+  });
 
   useEffect(() => {
     setMobileOpen(false);
@@ -35,16 +62,55 @@ export default function DashboardLayout({ children, admin = false }) {
 
   useEffect(() => {
     let alive = true;
-    const load = () =>
-      api.get('/notifications/unread-count')
-        .then((r) => alive && setUnread(r.data.data.count))
-        .catch(() => {});
+    const load = async () => {
+      try {
+        const [notifications, challenges, events, polls, community, chat, members] = await Promise.all([
+          api.get('/notifications/unread-count'),
+          api.get('/challenges?page=1&limit=50'),
+          api.get('/events?upcoming=1&page=1&limit=50'),
+          api.get('/polls'),
+          api.get('/community?page=1&limit=30'),
+          api.get('/chat/messages?limit=100'),
+          api.get('/users?page=1&limit=50'),
+        ]);
+        if (!alive) return;
+
+        const challengeItems = challenges.data.data.items || [];
+        const eventItems = events.data.data.items || [];
+        const pollItems = polls.data.data.items || [];
+        const communityItems = community.data.data.items || [];
+        const chatItems = chat.data.data.messages || [];
+        const memberItems = members.data.data.users || [];
+        const incompleteStatuses = new Set(['active', 'not_started', 'needs_changes', 'overdue']);
+
+        setUnread(notifications.data.data.count);
+        setBadges({
+          challenges: challengeItems.filter((item) => incompleteStatuses.has(item.memberStatus)).length,
+          events: eventItems.filter((item) => !item.registered).length,
+          polls: pollItems.filter((item) => ['active', 'scheduled'].includes(item.liveStatus) && !item.hasVoted).length,
+          community: countAfter(communityItems, getSeenAt('community')),
+          chat: chatItems.filter((item) => (
+            item.author?.id !== user?.id && new Date(item.createdAt).getTime() > getSeenAt('chat')
+          )).length,
+          members: countAfter(memberItems, getSeenAt('members')),
+        });
+      } catch {
+        // The page itself remains usable when an optional sidebar count fails.
+      }
+    };
     load();
-    const t = setInterval(load, 60000);
+    const t = setInterval(load, 30000);
     return () => {
       alive = false;
       clearInterval(t);
     };
+  }, [location.pathname, user?.id]);
+
+  useEffect(() => {
+    const section = Object.keys(SEEN_KEYS).find((key) => location.pathname === `/${key}` || location.pathname.startsWith(`/${key}/`));
+    if (!section) return;
+    markSeen(section);
+    setBadges((current) => ({ ...current, [section]: 0 }));
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -54,7 +120,7 @@ export default function DashboardLayout({ children, admin = false }) {
 
   const navItems = (
     <nav className="flex flex-1 flex-col gap-1 px-3">
-      {NAV.map(({ to, label, icon: Icon }) => (
+      {NAV.map(({ to, label, icon: Icon, badge }) => (
         <NavLink
           key={to}
           to={to}
@@ -67,7 +133,12 @@ export default function DashboardLayout({ children, admin = false }) {
           }
         >
           <Icon className="h-[18px] w-[18px]" />
-          {label}
+          <span className="min-w-0 flex-1">{label}</span>
+          {badge && badges[badge] > 0 && (
+            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+              {badges[badge] > 99 ? '99+' : badges[badge]}
+            </span>
+          )}
         </NavLink>
       ))}
       {isAdmin && (
